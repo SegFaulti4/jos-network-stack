@@ -25,30 +25,31 @@ struct pci_driver {
 
 // pci_attach_class matches the class and subclass of a PCI device
 struct pci_driver pci_attach_class[] = {
-        {PCI_CLASS_BRIDGE, PCI_SUBCLASS_BRIDGE_PCI, &pci_bridge_attach},
-        {0, 0, 0}, // used as a sign of the end of the array
+    {PCI_CLASS_BRIDGE, PCI_SUBCLASS_BRIDGE_PCI, &pci_bridge_attach},
+    {0, 0, 0}, // used as a sign of the end of the array
 };
 
 // pci_attach_vendor matches the vendor ID and device ID of a PCI device. key1
 // and key2 should be the vendor ID and device ID respectively
 struct pci_driver pci_attach_vendor[] = {
-        {0x8086, 0x100e, e1000_attach},
-        {0, 0, 0},
+    {0x8086, 0x100e, e1000_attach},
+    {0, 0, 0},
 };
 
 static void
-pci_conf1_set_addr(uint32_t bus,
-                   uint32_t dev,
-                   uint32_t func,
-                   uint32_t offset) {
+pci_conf1_set_addr(
+    uint32_t bus,
+    uint32_t dev,
+    uint32_t func,
+    uint32_t offset
+) {
     assert(bus < 256);
     assert(dev < 32);
     assert(func < 8);
     assert(offset < 256);
     assert((offset & 0x3) == 0);
 
-    uint32_t v = (1 << 31) |
-                 (bus << 16) | (dev << 11) | (func << 8) | (offset);
+    uint32_t v = (1 << 31) | bus << 16) | (dev << 11) | (func << 8) | (offset);
     outl(PCI_CONFIGURATION_ADDRESS_PORT, v);
 }
 
@@ -102,15 +103,14 @@ pci_attach(struct pci_func *f) {
 }
 
 // array of pci classes
-static const char *pci_class[] =
-        {
-                [0x0] = "Unknown",
-                [0x1] = "Storage controller",
-                [0x2] = "Network controller",
-                [0x3] = "Display controller",
-                [0x4] = "Multimedia device",
-                [0x5] = "Memory controller",
-                [0x6] = "Bridge device",
+static const char *pci_class[] = {
+    [0x0] = "Unknown",
+    [0x1] = "Storage controller",
+    [0x2] = "Network controller",
+    [0x3] = "Display controller",
+    [0x4] = "Multimedia device",
+    [0x5] = "Memory controller",
+    [0x6] = "Bridge device",
 };
 
 // for debug purposes
