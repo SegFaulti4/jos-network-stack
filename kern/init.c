@@ -18,6 +18,7 @@
 #include <kern/kclock.h>
 #include <kern/kdebug.h>
 #include <kern/traceopt.h>
+#include <net/pci.h>
 
 void
 timers_init(void) {
@@ -153,7 +154,7 @@ i386_init(void) {
 
     /* User environment initialization functions */
     env_init();
-
+    pci_init();
     /* Choose the timer used for scheduling: hpet or pit */
     timers_schedule("hpet0");
 
