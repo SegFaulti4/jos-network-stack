@@ -3,8 +3,8 @@
 
 #include <net/pci.h>
 
-#define NU_DESC     64      // Number of descriptors (RX or TX)
-#define BUFFER_SIZE 1518    // Same as ethernet packet size
+#define E1000_NU_DESC     64      // Number of descriptors (RX or TX)
+#define E1000_BUFFER_SIZE 1518    // Same as ethernet packet size
 
 // TX Descriptor
 struct tx_desc {
@@ -46,8 +46,9 @@ volatile uint32_t *phy_mmio_addr;
 #define E1000_TCTL_COLD 0x1000000   // Collision Distance
 
 // TX Descriptor bit definitions
+#define E1000_TXD_STAT_DD 0x00000001    // Descriptor Done
 #define E1000_TXD_CMD_RS  0x00000008    // Report Status
-#define E1000_TXD_CMD_EOP 0x00000001    // End of Packet
+#define E1000_TXD_CMD_EOP 0x01000000    // End of Packet
 
 // Rx Desc Registers
 #define E1000_RCTL  0x00100 // RX Control - RW
@@ -63,18 +64,22 @@ volatile uint32_t *phy_mmio_addr;
 #define E1000_RCTL_BAM 0x00008000   // Broadcast Enable
 #define E1000_RCTL_CRC 0x04000000   // Strip Ethernet CRC
 
-#define E1000_RX_RAL 0x05400    // Receive Address Low - RW Array
-#define E1000_RX_RAH 0x05404    // Receive Address High - RW Array
+// RX Descriptor bit definitions
+#define E1000_RXD_STAT_DD 0x01  // Descriptor Done
+
+// General Registers
+#define E1000_RAL 0x05400    // Receive Address Low - RW Array
+#define E1000_RAH 0x05404    // Receive Address High - RW Array
 
 
-struct tx_desc tx_desc_table[NU_DESC];  // Literally
-struct rx_desc rx_desc_table[NU_DESC];  // Literally
-char tx_buf[NU_DESC][BUFFER_SIZE];      // TX buffers
-char rx_buf[NU_DESC][BUFFER_SIZE];      // RX buffers
+struct tx_desc tx_desc_table[E1000_NU_DESC];  // Literally
+struct rx_desc rx_desc_table[E1000_NU_DESC];  // Literally
+char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE];      // TX buffers
+char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE];      // RX buffers
 
 
 int e1000_attach(struct pci_func *pcif);
-int transmit_packet(char *buf, int size);
-int receive_packet(char *buf);
+int e1000_transmit(const char *buf, unsigned len);
+int e1000_receive(char *buf);
 
 #endif // JOS_NET_E1000_H
