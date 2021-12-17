@@ -35,6 +35,22 @@
 #define	_DEV_PCI_PCIREG_H_
 
 /*
+ * Bit operations
+ */
+#define	__BIT(__n) (((__n) == 32) ? 0 : ((uint32_t)1 << (__n)))
+
+/* __BITS(m, n): bits m through n, m < n. */
+#define	__BITS(__m, __n)	\
+	((__BIT(MAX((__m), (__n)) + 1) - 1) ^ (__BIT(MIN((__m), (__n))) - 1))
+
+/* Find least significant bit that is set */
+#define	__LOWEST_SET_BIT(__mask) ((((__mask) - 1) & (__mask)) ^ (__mask))
+
+#define	__SHIFTOUT(__x, __mask) (((__x) & (__mask)) / __LOWEST_SET_BIT(__mask))
+#define	__SHIFTIN(__x, __mask) ((__x) * __LOWEST_SET_BIT(__mask))
+#define	__SHIFTOUT_MASK(__mask) __SHIFTOUT((__mask), (__mask))
+
+/*
  * Standardized PCI configuration information
  */
 
@@ -50,8 +66,8 @@
  */
 #define	PCI_ID_REG		0x00
 
-typedef u_int16_t pci_vendor_id_t;
-typedef u_int16_t pci_product_id_t;
+typedef uint16_t pci_vendor_id_t;
+typedef uint16_t pci_product_id_t;
 
 #define	PCI_VENDOR_SHIFT		0
 #define	PCI_VENDOR_MASK			0xffffU
@@ -129,10 +145,10 @@ typedef u_int16_t pci_product_id_t;
  */
 #define	PCI_CLASS_REG		0x08
 
-typedef u_int8_t pci_class_t;
-typedef u_int8_t pci_subclass_t;
-typedef u_int8_t pci_interface_t;
-typedef u_int8_t pci_revision_t;
+typedef uint8_t pci_class_t;
+typedef uint8_t pci_subclass_t;
+typedef uint8_t pci_interface_t;
+typedef uint8_t pci_revision_t;
 
 #define	PCI_CLASS_SHIFT			24
 #define	PCI_CLASS_MASK			0xff
@@ -1281,10 +1297,10 @@ struct pci_msix_table_entry {
  */
 #define	PCI_INTERRUPT_REG	0x3c
 
-typedef u_int8_t pci_intr_latency_t;
-typedef u_int8_t pci_intr_grant_t;
-typedef u_int8_t pci_intr_pin_t;
-typedef u_int8_t pci_intr_line_t;
+typedef uint8_t pci_intr_latency_t;
+typedef uint8_t pci_intr_grant_t;
+typedef uint8_t pci_intr_pin_t;
+typedef uint8_t pci_intr_line_t;
 
 #define PCI_MAX_LAT_SHIFT		24
 #define	PCI_MAX_LAT_MASK		0xff
@@ -1418,14 +1434,14 @@ typedef u_int8_t pci_intr_line_t;
 struct pci_vpd_smallres {
     uint8_t		vpdres_byte0;		/* length of data + tag */
                           /* Actual data. */
-} __packed;
+} __attribute__((packed));
 
 struct pci_vpd_largeres {
     uint8_t		vpdres_byte0;
     uint8_t		vpdres_len_lsb;		/* length of data only */
     uint8_t		vpdres_len_msb;
     /* Actual data. */
-} __packed;
+} __attribute__((packed));
 
 #define	PCI_VPDRES_ISLARGE(x)			((x) & 0x80)
 
@@ -1446,7 +1462,7 @@ struct pci_vpd {
     uint8_t		vpd_key1;
     uint8_t		vpd_len;		/* length of data only */
                      /* Actual data. */
-} __packed;
+} __attribute__((packed));
 
 /*
  * Recommended VPD fields:
@@ -1483,7 +1499,7 @@ struct pci_rom_header {
     uint16_t		romh_magic;	/* 0xAA55 little endian */
     uint8_t			romh_reserved[22];
     uint16_t		romh_data_ptr;	/* pointer to pci_rom struct */
-} __packed;
+} __attribute__((packed));
 
 #define	PCI_ROM_HEADER_MAGIC	0xAA55		/* little endian */
 
@@ -1503,7 +1519,7 @@ struct pci_rom {
     uint8_t			rom_indicator;
     uint16_t		rom_reserved;
     /* Actual data. */
-} __packed;
+} __attribute__((packed));
 
 #define	PCI_ROM_SIGNATURE	0x52494350	/* "PCIR", endian reversed */
 #define	PCI_ROM_CODE_TYPE_X86	0		/* Intel x86 BIOS */

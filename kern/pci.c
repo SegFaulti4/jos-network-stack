@@ -1,9 +1,9 @@
 #include <inc/x86.h>
 #include <inc/assert.h>
 #include <inc/string.h>
-#include <net/pci.h>
-#include <net/pcireg.h>
-#include <net/e1000.h>
+#include <kern/pci.h>
+#include <kern/pcireg.h>
+#include <kern/e1000.h>
 
 // for debug purposes
 #define pci_show_devs  1
@@ -49,7 +49,7 @@ pci_conf1_set_addr(
     assert(offset < 256);
     assert((offset & 0x3) == 0);
 
-    uint32_t v = (1 << 31) | bus << 16) | (dev << 11) | (func << 8) | (offset);
+    uint32_t v = (1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | (offset);
     outl(PCI_CONFIGURATION_ADDRESS_PORT, v);
 }
 

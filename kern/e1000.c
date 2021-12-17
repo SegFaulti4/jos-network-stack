@@ -1,5 +1,5 @@
-#include <net/e1000.h>
-#include <net/pci.h>
+#include <kern/e1000.h>
+#include <kern/pci.h>
 #include <kern/pmap.h>
 #include <inc/types.h>
 #include <inc/string.h>
@@ -38,7 +38,7 @@ int e1000_attach(struct pci_func * pciFunction) {
     // Set TX Descriptors
     for (int i = 0; i < E1000_NU_DESC; i++) {
         // Set TX status as Descriptor Done
-        tx_desc_table[i].status |= E100_TXD_STAT_DD;
+        tx_desc_table[i].status |= E1000_TXD_STAT_DD;
         // Set TX buffer address
         tx_desc_table[i].buf_addr = PADDR(tx_buf[i]);
     }
@@ -70,9 +70,9 @@ int e1000_attach(struct pci_func * pciFunction) {
     E1000_REG(E1000_RCTL) = E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_CRC;
 
     // Set RX Descriptors
-    for (i = 0; i < E1000_NU_DESC; i++) {
+    for (int i = 0; i < E1000_NU_DESC; i++) {
         // Clear RX status Descriptor Done
-        rx_desc_table[i].status &= ~E1000_RXD_STAT_DD
+        rx_desc_table[i].status &= ~E1000_RXD_STAT_DD;
         // Set RX buffer address
         rx_desc_table[i].buf_addr = PADDR(rx_buf[i]);
     }
@@ -81,9 +81,9 @@ int e1000_attach(struct pci_func * pciFunction) {
 }
 
 
-int e1000_transmit(char* buf, unsigned len) {
+int e1000_transmit(const char* buf, unsigned len) {
     // Trunk packet length
-    len = len > E1000_BUF_SIZE ? E1000_BUF_SIZE : len;
+    len = len > E1000_BUFFER_SIZE ? E1000_BUFFER_SIZE : len;
 
     // Tail TX Descriptor Index
     uint32_t tail_tx = E1000_REG(E1000_TDT);
@@ -95,16 +95,16 @@ int e1000_transmit(char* buf, unsigned len) {
     }
 
     // Clear TX status Descriptor Done
-    tx_queue_desc[tail_indx].status &= ~E1000_TXD_STAT_DD;
+    tx_desc_table[tail_tx].status &= ~E1000_TXD_STAT_DD;
 
     // Move data to buffer
     memmove(tx_buf[tail_tx], buf, len);
 
     // Set packet length
-    tx_desc_table[tail_tx].length = length;
+    tx_desc_table[tail_tx].length = len;
 
     // Set TX cmd as Report Status and End of Packet
-    tx_desc_table[head].cmd |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
+    tx_desc_table[tail_tx].cmd |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
 
     // Point to next TX Descriptor
     tail_tx = (tail_tx + 1) % E1000_NU_DESC;
@@ -124,13 +124,13 @@ int e1000_receive(char* buffer) {
     }
 
     // Clear RX status Descriptor Done
-    rx_desc_table[tail_tx].status &= ~E1000_RXD_STAT_DD;
+    rx_desc_table[tail_rx].status &= ~E1000_RXD_STAT_DD;
 
     // Get packet length
-    int len = rx_desc_table[tail_tx].length;
+    int len = rx_desc_table[tail_rx].length;
 
     // Get data from buffer
-    memmove(buffer, rx_buf[head], len);
+    memmove(buffer, rx_buf[tail_rx], len);
 
     // Point to next RX Descriptor
     tail_rx = (tail_rx + 1) % E1000_NU_DESC;

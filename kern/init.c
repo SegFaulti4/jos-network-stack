@@ -18,7 +18,7 @@
 #include <kern/kclock.h>
 #include <kern/kdebug.h>
 #include <kern/traceopt.h>
-#include <net/pci.h>
+#include <kern/pci.h>
 
 void
 timers_init(void) {

@@ -1,7 +1,7 @@
-#ifndef JOS_NET_E1000_H
-#define JOS_NET_E1000_H
+#ifndef JOS_KERN_E1000_H
+#define JOS_KERN_E1000_H
 
-#include <net/pci.h>
+#include <kern/pci.h>
 
 #define E1000_NU_DESC     64      // Number of descriptors (RX or TX)
 #define E1000_BUFFER_SIZE 1518    // Same as ethernet packet size
@@ -82,4 +82,4 @@ int e1000_attach(struct pci_func *pcif);
 int e1000_transmit(const char *buf, unsigned len);
 int e1000_receive(char *buf);
 
-#endif // JOS_NET_E1000_H
+#endif // JOS_KERN_E1000_H
