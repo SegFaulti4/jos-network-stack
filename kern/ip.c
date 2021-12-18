@@ -73,9 +73,9 @@ ip_recv(struct ip_pkt* pkt) {
     if (hdr->ip_protocol == IP_PROTO_TCP) {
         // some tcp reciever
     } else  if (hdr->ip_protocol == IP_PROTO_UDP) {
-        udp_recv(pkt);
+        return udp_recv(pkt);
     } else if (hdr->ip_protocol == IP_PROTO_ICMP) {
-        icmp_echo_reply(pkt);
+        return icmp_echo_reply(pkt);
     }
 
     return 0;

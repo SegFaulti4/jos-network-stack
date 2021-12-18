@@ -4,6 +4,7 @@
 #include <kern/inet.h>
 #include <inc/error.h>
 #include <inc/assert.h>
+#include <kern/arp.h>
 
 
 int
@@ -35,9 +36,9 @@ eth_recv(void* data) {
     hdr->eth_type = ntohs(hdr->eth_type);
     memcpy(data, (void*)buf + sizeof(struct eth_hdr), size);
     if (hdr->eth_type == ETH_TYPE_IP) {
-        ip_recv(data);
+        return ip_recv(data);
     } else if (hdr->eth_type == ETH_TYPE_ARP) {
-        // some arp functions
+        arp_resolve(data);
     } else {
         return -E_BAD_ETH_TYPE;
     }
