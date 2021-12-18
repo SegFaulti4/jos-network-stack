@@ -36,9 +36,10 @@ eth_recv(void* data) {
     memcpy(data, (void*)buf + sizeof(struct eth_hdr), size);
     if (hdr->eth_type == ETH_TYPE_IP) {
         ip_recv(data);
-    }
-    else {
+    } else if (hdr->eth_type == ETH_TYPE_ARP) {
         // some arp functions
+    } else {
+        return -E_BAD_ETH_TYPE;
     }
 
     return size;
