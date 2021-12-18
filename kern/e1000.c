@@ -58,13 +58,13 @@ int e1000_attach(struct pci_func * pciFunction) {
     E1000_REG(E1000_RDBAH) = 0;
 
     // Set RX Length
-    E1000_REG(E1000_RDLEN) = sizeof(rx_desc_table);
+    E1000_REG(E1000_RDLEN) = E1000_NU_DESC;
 
     // Set RX Head
     E1000_REG(E1000_RDH) = 0;
 
     // Set RX Tail
-    E1000_REG(E1000_RDT) = 0;
+    E1000_REG(E1000_RDT) = E1000_NU_DESC - 1;
 
     // Set RX Control Register
     E1000_REG(E1000_RCTL) = E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_CRC;
@@ -90,7 +90,7 @@ int e1000_transmit(const char* buf, unsigned len) {
 
     // Check status of tail TX Descriptor
     if (!(tx_desc_table[tail_tx].status & E1000_TXD_STAT_DD)) {
-        cprintf("E1000 transmit queue is full");
+        cprintf("E1000 transmit queue is full\n");
         return -1;
     }
 
@@ -116,10 +116,11 @@ int e1000_transmit(const char* buf, unsigned len) {
 int e1000_receive(char* buffer) {
     // Tail RX Descriptor Index
     uint32_t tail_rx = E1000_REG(E1000_RDT);
+    tail_rx = (tail_rx + 1) % E1000_NU_DESC;
 
     // Check status of tail RX Descriptor
     if (!(rx_desc_table[tail_rx].status & E1000_RXD_STAT_DD)) {
-        cprintf("E1000 receive queue is empty");
+        cprintf("E1000 receive queue is empty\n");
         return -1;
     }
 
@@ -133,7 +134,6 @@ int e1000_receive(char* buffer) {
     memmove(buffer, rx_buf[tail_rx], len);
 
     // Point to next RX Descriptor
-    tail_rx = (tail_rx + 1) % E1000_NU_DESC;
     E1000_REG(E1000_RDT) = tail_rx;
 
     return len;
