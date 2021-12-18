@@ -5,7 +5,6 @@
 #include <inc/error.h>
 #include <inc/assert.h>
 
-#define ETH_MAX_PACKET_SIZE 1500
 
 int
 eth_send(struct eth_hdr* hdr, void* data, size_t len) {
@@ -19,14 +18,15 @@ eth_send(struct eth_hdr* hdr, void* data, size_t len) {
     memcpy((void*)buf, (void*)hdr, sizeof(struct eth_hdr));
 
     memcpy((void*)buf + sizeof(struct eth_hdr), data, len);
-
+    // len - data length
     return e1000_transmit(buf, len + sizeof(struct eth_hdr));
 }
 
 
 int
-eth_recv(struct eth_hdr* hdr, void* data) {
+eth_recv(void* data) {
     char buf[ETH_MAX_PACKET_SIZE + 1];
+    struct eth_hdr* hdr;
 
     int size = e1000_receive(buf);
     if (size < 0) return size;
@@ -35,7 +35,7 @@ eth_recv(struct eth_hdr* hdr, void* data) {
     hdr->eth_type = ntohs(hdr->eth_type);
     memcpy(data, (void*)buf + sizeof(struct eth_hdr), size);
     if (hdr->eth_type == ETH_TYPE_IP) {
-        ip_recv();
+        ip_recv(data);
     }
     else {
         // some arp functions

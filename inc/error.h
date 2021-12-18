@@ -27,6 +27,8 @@ enum {
     E_FILE_EXISTS = 17, /* File already exists */
     E_NOT_EXEC = 18,    /* File not a valid executable */
     E_NOT_SUPP = 19,    /* Operation not supported */
+    E_UNS_VER = 20,     /* IP version is unsupported */
+    E_INV_CHS = 21,     /* Invalid checksum is invalid */
     MAXERROR
 };
 
