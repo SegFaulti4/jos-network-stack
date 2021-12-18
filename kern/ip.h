@@ -2,7 +2,6 @@
 #define JOS_KERN_IP_H
 
 #include <inc/types.h>
-#include <kern/e1000.h>
 #include <kern/ethernet.h>
 
 struct ip_hdr {
@@ -35,9 +34,6 @@ int ip_recv(struct ip_pkt* pkt);
 #define IP_HLEN    (IP_HEADER_LEN / sizeof(uint32_t))
 #define IP_VER_LEN (IP_VER << 4 | IP_HLEN)
 #define IP_TTL 64
-
-#define IPH_VERSION(hdr)  ((hdr)->ip_verlen & 0xf)
-#define IPH_LENGTH(hdr) (((hdr)->ip_verlen >> 4) & 0x0f)
 
 #define IP_PROTO_ICMP 1
 #define IP_PROTO_UDP  17

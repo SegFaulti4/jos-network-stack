@@ -3,6 +3,7 @@
 #include <kern/inet.h>
 #include <inc/error.h>
 #include <kern/ethernet.h>
+#include <icmp.h>
 #include <inc/stdio.h>
 
 uint16_t packet_id = 0;
@@ -74,7 +75,7 @@ ip_recv(struct ip_pkt* pkt) {
     } else  if (hdr->ip_protocol == IP_PROTO_UDP) {
         udp_recv(pkt);
     } else if (hdr->ip_protocol == IP_PROTO_ICMP) {
-        // some icmp function
+        icmp_echo_reply(pkt);
     }
 
     return 0;
