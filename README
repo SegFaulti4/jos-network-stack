@@ -1,29 +1,25 @@
-This branch contains vastly improoved kernel memory
-subsystem with following new features:
-    * 2M/1G pages
-    * Lazy copying/lazy memory allocation
-        * Used for speeding up ASAN memory allocation
-        * Kernel memory is also lazily allocated
-    * NX flag
-    * Buddy physical memory allocator
-    * O((log N)^2) region manipulation
-    * More convinient syscall API
-    * IPC with memory regions of size larger than 4K
-        * Not used at the moment but would be useful
-          for file server optimization
-    * Reduced memory consumption by a lot
-    * All supported sanitizers can work simultaniously
-      with any amount of memory (as long as bootloader can allocate enough memory for the kernel)
+This repository contains our TCP/IP stack implementation.
+All our files are located in the kern folder.
+List of new files and their functions:
+    * pci.h and pci.c - implementation of PCI device
+        initialization and network card driver attach
 
-The code is mostly located in kern/pmap.c
-A set of trees is used for holding metadata (nodes are of type struct Page):
-    * A tree describing physical memory
-    * One tree for every address space (for every environment and kernel)
+    * e1000.h and e1000.c - implementation of network card driver and
+        functions for transmit and recieve data.
 
-TODO
-    * Replace user_mem_assert with exception-based code
-        * copyin/copyout functions
-    * Refactor address spcae and move all kernel-only memory
-      regions to cannonical upper part of adress space
-      (this requeres copyin/copyout functions because
-       ASAN should never touch userspace memory)
+    * ethernet.h and ethernet.c - implementation of ethernet protocol
+        use functions from e1000.c to recieve and transmit data. The
+        data is treated as an Ethernet frame structure. After parsing
+        the ethernet frame, the data is transmitted either to the
+        ip layer or to the arp response.
+
+    * arp.h and arp.c - implementing an arp response to an arp request.
+
+    * ip.h and ip.c - implementation of the ip layer. The data received
+        from the underlying ethernet layer is treated as an ip packet, after which,
+        depending on the destination, it is transmitted either to the UDP/TCP protocol
+        for further transformations or to the ICMP protocol for echo response.
+
+    * icmp.h and icmp.c - icmp echo response implementation.
+
+    * udp.h and udp.c - implementation of recieving and transmitting udp datagrams.
