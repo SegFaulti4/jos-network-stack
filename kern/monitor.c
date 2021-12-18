@@ -18,6 +18,8 @@
 #include <kern/pmap.h>
 #include <kern/kclock.h>
 
+#include <kern/e1000.h>
+
 #define WHITESPACE "\t\r\n "
 #define MAXARGS    16
 
@@ -32,6 +34,8 @@ int mon_frequency(int argc, char **argv, struct Trapframe *tf);
 int mon_memory(int argc, char **argv, struct Trapframe *tf);
 int mon_pagetable(int argc, char **argv, struct Trapframe *tf);
 int mon_virt(int argc, char **argv, struct Trapframe *tf);
+int mon_e1000_recv(int argc, char **argv, struct Trapframe *tf);
+int mon_e1000_tran(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
    const char *name;
@@ -50,7 +54,9 @@ static struct Command commands[] = {
        {"timer_freq", "Count processor frequency", mon_frequency},
        {"memory", "Memory", mon_memory},
        {"pagetable", "Dump page table", mon_pagetable},
-       {"virt", "Dump virtual list", mon_virt}
+       {"virt", "Dump virtual list", mon_virt},
+        {"e1000_recv", "Test e1000 receive", mon_e1000_recv},
+        {"e1000_tran", "Test e1000 transmit", mon_e1000_tran}
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -177,7 +183,22 @@ mon_virt(int argc, char **argv, struct Trapframe *tf) {
     return 0;
 }
 
-/* Kernel monitor command interpreter */
+int
+mon_e1000_recv(int argc, char **argv, struct Trapframe *tf) {
+    char buf[1000];
+    e1000_receive(buf);
+    cprintf("received: %s\n", buf);
+    return 0;
+}
+
+int
+mon_e1000_tran(int argc, char **argv, struct Trapframe *tf) {
+    char buf[] = "Hello\n";
+    e1000_transmit(buf, sizeof(buf));
+    return 0;
+}
+
+        /* Kernel monitor command interpreter */
 
 static int
 runcmd(char *buf, struct Trapframe *tf) {

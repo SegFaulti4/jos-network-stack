@@ -312,6 +312,14 @@ IMAGES += $(OBJDIR)/fs/fs.img
 QEMUOPTS += -bios $(OVMF_FIRMWARE)
 # QEMUOPTS += -debugcon file:$(UEFIDIR)/debug.log -global isa-debugcon.iobase=0x402
 
+
+# net purposes
+QEMUOPTS += -netdev tap,id=jos_dev_net,ifname=jostap,script=no,downscript=no
+QEMUOPTS += -device e1000,netdev=jos_dev_net,mac=52:54:00:12:34:56
+QEMUOPTS += -object filter-dump,id=jos_dev_net,netdev=jos_dev_net,file=dump.dat
+# net purposes
+
+
 define POST_CHECKOUT
 #!/bin/sh -x
 make clean
