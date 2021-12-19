@@ -45,9 +45,6 @@ ip_send(struct ip_pkt* pkt, uint16_t length) {
     hdr->ip_id = id;
     hdr->ip_flags_offset = 0;
     hdr->ip_ttl = IP_TTL;
-    hdr->ip_destination_address = JHTONL(3232249857);
-    hdr->ip_source_address = JHTONL(3232249858);
-
     hdr->ip_header_checksum = ip_checksum((void*)pkt, IP_HEADER_LEN);
     struct eth_hdr e_hdr;
     e_hdr.eth_type = ETH_TYPE_IP;
