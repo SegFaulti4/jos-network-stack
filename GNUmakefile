@@ -314,7 +314,7 @@ QEMUOPTS += -bios $(OVMF_FIRMWARE)
 
 
 # net purposes
-QEMUOPTS += -netdev tap,id=jos_dev_net,ifname=jostap,script=no,downscript=no
+QEMUOPTS += -net nic,model=virtio -net tap,id=jos_dev_net,ifname=jostap,script=no,downscript=no
 QEMUOPTS += -device e1000,netdev=jos_dev_net,mac=52:54:00:12:34:56
 QEMUOPTS += -object filter-dump,id=jos_dev_net,netdev=jos_dev_net,file=dump.dat
 # net purposes

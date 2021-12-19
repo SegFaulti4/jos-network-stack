@@ -5,7 +5,14 @@
 #include <inc/string.h>
 #include <inc/error.h>
 
+// Base mmio address
+volatile uint32_t *phy_mmio_addr;
 #define E1000_REG(offset) (phy_mmio_addr[offset >> 2])
+
+struct tx_desc tx_desc_table[E1000_NU_DESC];  // Literally
+struct rx_desc rx_desc_table[E1000_NU_DESC];  // Literally
+char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE];      // TX buffers
+char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE];      // RX buffers
 
 int e1000_attach(struct pci_func * pciFunction) {
     // Get phy_mmio address and size

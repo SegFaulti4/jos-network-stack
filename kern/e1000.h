@@ -27,8 +27,6 @@ struct rx_desc {
     uint16_t special;
 };
 
-// Base mmio address
-volatile uint32_t *phy_mmio_addr;
 
 // TX Descriptor Registers
 #define E1000_TCTL  0x00400 // Control Register - RW
@@ -70,13 +68,6 @@ volatile uint32_t *phy_mmio_addr;
 // General Registers
 #define E1000_RAL 0x05400    // Receive Address Low - RW Array
 #define E1000_RAH 0x05404    // Receive Address High - RW Array
-
-
-struct tx_desc tx_desc_table[E1000_NU_DESC];  // Literally
-struct rx_desc rx_desc_table[E1000_NU_DESC];  // Literally
-char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE];      // TX buffers
-char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE];      // RX buffers
-
 
 int e1000_attach(struct pci_func *pcif);
 int e1000_transmit(const char *buf, unsigned len);
