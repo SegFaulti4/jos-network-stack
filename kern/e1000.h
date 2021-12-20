@@ -28,9 +28,6 @@ struct rx_desc {
     uint16_t special;
 };
 
-// Base mmio address
-volatile uint32_t *phy_mmio_addr;
-
 // General Registers
 #define E1000_DEVICE_STATUS 0x00008 // Device Status - RO
 #define E1000_RCTL          0x00100 // RX Control - RW
@@ -73,11 +70,6 @@ volatile uint32_t *phy_mmio_addr;
 // RX Descriptor bit definitions
 #define E1000_RXD_STAT_DD  0x01 // Descriptor Done
 #define E1000_RXD_STAT_EOP 0x02 // End of Packet
-
-struct tx_desc tx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)));
-struct rx_desc rx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)));
-char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
-char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
 
 
 int e1000_attach(struct pci_func *pcif);

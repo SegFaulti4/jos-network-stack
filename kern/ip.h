@@ -17,7 +17,6 @@ struct ip_hdr {
     uint32_t ip_destination_address;  // Destination address
 } __attribute__((packed));
 
-
 #define IP_HEADER_LEN  sizeof(struct ip_hdr)
 #define IP_DATA_LEN (ETH_MAX_PACKET_SIZE - ETH_HEADER_LEN - IP_HEADER_LEN)
 

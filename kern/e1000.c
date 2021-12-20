@@ -7,6 +7,15 @@
 
 #define E1000_REG(offset) (phy_mmio_addr[offset >> 2])
 
+// Base mmio address
+volatile uint32_t *phy_mmio_addr;
+
+struct tx_desc tx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)));
+struct rx_desc rx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)));
+char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
+char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
+
+
 void dump_tx_desc(uint32_t tx_idx) {
     cprintf("\nTX Desc %u:\n", tx_idx);
     cprintf("\tbuf_addr: %lu\n", tx_desc_table[tx_idx].buf_addr);
