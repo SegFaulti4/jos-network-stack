@@ -7,6 +7,10 @@
 #include <inc/stdio.h>
 #include <kern/udp.h>
 
+uint32_t ip2num(int8_t ip[4]) {
+    return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
+}
+
 uint16_t packet_id = 0;
 
 uint16_t
@@ -43,12 +47,12 @@ ip_send(struct ip_pkt* pkt, uint16_t length) {
     hdr->ip_verlen = IP_VER_LEN;
     hdr->ip_tos = 0;
     hdr->ip_total_length = JHTONS(length + IP_HEADER_LEN);
-    hdr->ip_id = id;
+    hdr->ip_id = JHTONS(id);
     hdr->ip_flags_offset = 0;
     hdr->ip_ttl = IP_TTL;
     hdr->ip_header_checksum = ip_checksum((void*)pkt, IP_HEADER_LEN);
     struct eth_hdr e_hdr;
-    e_hdr.eth_type = ETH_TYPE_IP;
+    e_hdr.eth_type = JHTONS(ETH_TYPE_IP);
     // length - data length
     return eth_send(&e_hdr, (void*)pkt, sizeof(struct ip_hdr) + length);
 }

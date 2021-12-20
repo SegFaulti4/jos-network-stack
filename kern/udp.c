@@ -14,8 +14,10 @@ udp_send(void* data, int length) {
     memcpy((void*)pkt.data, data, length);
     struct ip_pkt result;
     result.hdr.ip_protocol = IP_PROTO_UDP;
-    result.hdr.ip_source_address = JHTONL(3232249857);
-    result.hdr.ip_destination_address = JHTONL(3232249858);
+    int8_t src_ip[] = {192, 168, 123, 2};
+    int8_t dst_ip[] = {192, 168, 123, 1};
+    result.hdr.ip_source_address = JHTONL(ip2num(src_ip));
+    result.hdr.ip_destination_address = JHTONL(ip2num(dst_ip));
     memcpy((void*)result.data, (void*)&pkt, length + sizeof(struct udp_hdr));
     return ip_send(&result, length + sizeof(struct udp_hdr));
 }

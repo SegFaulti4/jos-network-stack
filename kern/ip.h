@@ -25,6 +25,7 @@ struct ip_pkt {
     uint8_t data[IP_DATA_LEN];
 };
 
+uint32_t ip2num(int8_t ip[4]);
 uint16_t ip_checksum(void* vdata, size_t length);
 int ip_send(struct ip_pkt* pkt, uint16_t length);
 int ip_recv(struct ip_pkt* pkt);
