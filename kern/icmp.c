@@ -3,7 +3,7 @@
 #include <kern/inet.h>
 #include <inc/error.h>
 #include <kern/ethernet.h>
-#include <icmp.h>
+#include <kern/icmp.h>
 #include <inc/stdio.h>
 
 int 

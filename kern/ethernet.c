@@ -5,6 +5,7 @@
 #include <inc/error.h>
 #include <inc/assert.h>
 #include <kern/arp.h>
+#include <kern/ip.h>
 
 
 int
@@ -27,7 +28,7 @@ eth_send(struct eth_hdr* hdr, void* data, size_t len) {
 int
 eth_recv(void* data) {
     char buf[ETH_MAX_PACKET_SIZE + 1];
-    struct eth_hdr* hdr;
+    struct eth_hdr* hdr = NULL;
 
     int size = e1000_receive(buf);
     if (size < 0) return size;
