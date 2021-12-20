@@ -12,6 +12,10 @@ uint32_t ip2num(int8_t ip[4]) {
     return ((ip[0] + 1) << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
 }
 
+void num2ip(int32_t num) {
+    cprintf(" %d.%d.%d.%d ", (num >> 24) & 0xFF, (num >> 16) & 0xFF, (num >> 8) & 0xFF, num & 0xFF);
+}
+
 uint16_t packet_id = 0;
 
 uint16_t

@@ -37,6 +37,7 @@ int mon_pagetable(int argc, char **argv, struct Trapframe *tf);
 int mon_virt(int argc, char **argv, struct Trapframe *tf);
 int mon_e1000_recv(int argc, char **argv, struct Trapframe *tf);
 int mon_e1000_tran(int argc, char **argv, struct Trapframe *tf);
+int mon_eth_recv(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
    const char *name;
@@ -56,8 +57,9 @@ static struct Command commands[] = {
        {"memory", "Memory", mon_memory},
        {"pagetable", "Dump page table", mon_pagetable},
        {"virt", "Dump virtual list", mon_virt},
-        {"e1000_recv", "Test e1000 receive", mon_e1000_recv},
-        {"e1000_tran", "Test e1000 transmit", mon_e1000_tran}
+       {"e1000_recv", "Test e1000 receive", mon_e1000_recv},
+       {"eth_recv", "Test eth receive", mon_eth_recv},
+       {"e1000_tran", "Test e1000 transmit", mon_e1000_tran}
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -188,6 +190,19 @@ int
 mon_e1000_recv(int argc, char **argv, struct Trapframe *tf) {
     char buf[1000];
     int len = e1000_receive(buf);
+    cprintf("received len: %d\n", len);
+    cprintf("received packet: ");
+    for (int i = 0; i < len; i++) {
+        cprintf("%x ", buf[i] & 0xff);
+    }
+    cprintf("\n");
+    return 0;
+}
+
+int
+mon_eth_recv(int argc, char **argv, struct Trapframe *tf) {
+    char buf[1000];
+    int len = eth_recv(buf);
     cprintf("received len: %d\n", len);
     cprintf("received packet: ");
     for (int i = 0; i < len; i++) {

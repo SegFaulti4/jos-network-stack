@@ -6,15 +6,16 @@
 #include <kern/inet.h>
 
 void arp_reply(struct arp_hdr *arp_header) {
+    cprintf("In arp_reply\n");
     arp_header->opcode = ARP_REPLY;
     memcpy(arp_header->target_mac, arp_header->source_mac, 6);
     arp_header->target_ip = arp_header->source_ip;
     memcpy(arp_header->source_mac, qemu_mac, 6);
     arp_header->source_ip = JHTONL(MY_IP);
 
-    arp_header->opcode = htons(arp_header->opcode);
-    arp_header->hardware_type = htons(arp_header->hardware_type);
-    arp_header->protocol_type = htons(arp_header->protocol_type);
+    arp_header->opcode = JHTONS(arp_header->opcode);
+    arp_header->hardware_type = JHTONS(arp_header->hardware_type);
+    arp_header->protocol_type = JHTONS(arp_header->protocol_type);
 
     struct eth_hdr reply_header;
     memcpy(reply_header.eth_destination_mac, arp_header->target_mac, 6);
@@ -27,13 +28,15 @@ void arp_reply(struct arp_hdr *arp_header) {
 
 
 void arp_resolve(void* data) {
+    cprintf("In arp_resolve\n");
     struct arp_hdr *arp_header;
 
     arp_header = (struct arp_hdr *)data;
 
-    arp_header->hardware_type = ntohs(arp_header->hardware_type);
-    arp_header->protocol_type = ntohs(arp_header->protocol_type);
-    arp_header->opcode = ntohs(arp_header->opcode);
+    arp_header->hardware_type = JNTOHS(arp_header->hardware_type);
+    arp_header->protocol_type = JNTOHS(arp_header->protocol_type);
+    arp_header->opcode = JNTOHS(arp_header->opcode);
+    arp_header->target_ip = JNTOHL(arp_header->target_ip);
 
     if (arp_header->hardware_type != ARP_ETHERNET) {
         cprintf("Error! Only ethernet is supporting.");
