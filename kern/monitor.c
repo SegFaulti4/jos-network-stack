@@ -186,8 +186,13 @@ mon_virt(int argc, char **argv, struct Trapframe *tf) {
 int
 mon_e1000_recv(int argc, char **argv, struct Trapframe *tf) {
     char buf[1000];
-    e1000_receive(buf);
-    cprintf("received: %s\n", buf);
+    int len = e1000_receive(buf);
+    cprintf("received len: %d\n", len);
+    cprintf("received packet: ");
+    for (int i = 0; i < len; i++) {
+        cprintf("%x ", buf[i] & 0xff);
+    }
+    cprintf("\n");
     return 0;
 }
 
