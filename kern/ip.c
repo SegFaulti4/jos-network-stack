@@ -8,7 +8,8 @@
 #include <kern/udp.h>
 
 uint32_t ip2num(int8_t ip[4]) {
-    return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
+    // Strange fix
+    return ((ip[0] + 1) << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3];
 }
 
 uint16_t packet_id = 0;

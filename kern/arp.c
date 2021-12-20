@@ -10,7 +10,7 @@ void arp_reply(struct arp_hdr *arp_header) {
     memcpy(arp_header->target_mac, arp_header->source_mac, 6);
     arp_header->target_ip = arp_header->source_ip;
     memcpy(arp_header->source_mac, qemu_mac, 6);
-    arp_header->source_ip = MY_IP;
+    arp_header->source_ip = JHTONL(MY_IP);
 
     arp_header->opcode = htons(arp_header->opcode);
     arp_header->hardware_type = htons(arp_header->hardware_type);
@@ -18,7 +18,7 @@ void arp_reply(struct arp_hdr *arp_header) {
 
     struct eth_hdr reply_header;
     memcpy(reply_header.eth_destination_mac, arp_header->target_mac, 6);
-    reply_header.eth_type = ETH_TYPE_ARP;
+    reply_header.eth_type = JHTONS(ETH_TYPE_ARP);
     int status = eth_send(&reply_header, arp_header, sizeof(struct arp_hdr));
     if (status < 0) {
         cprintf("Error attempting arp response.");
