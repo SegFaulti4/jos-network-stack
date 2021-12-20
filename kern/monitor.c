@@ -19,6 +19,7 @@
 #include <kern/kclock.h>
 
 #include <kern/e1000.h>
+#include <kern/udp.h>
 
 #define WHITESPACE "\t\r\n "
 #define MAXARGS    16
@@ -198,8 +199,11 @@ mon_e1000_recv(int argc, char **argv, struct Trapframe *tf) {
 
 int
 mon_e1000_tran(int argc, char **argv, struct Trapframe *tf) {
-    char buf[] = "Hello\n";
-    e1000_transmit(buf, sizeof(buf));
+    for (int i = 0; i < 70; i++) {
+        char buf[] = "Hello\n";
+        udp_send(buf, sizeof(buf));
+        //e1000_transmit(buf, sizeof(buf));
+    }
     return 0;
 }
 
