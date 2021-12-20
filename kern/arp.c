@@ -5,7 +5,7 @@
 #include <inc/error.h>
 #include <kern/inet.h>
 
-static struct arp_cache_table arp_resolving_table[ARP_TABLE_MAX_SIZE];
+// static struct arp_cache_table arp_resolving_table[ARP_TABLE_MAX_SIZE];
 
 void arp_reply(struct arp_hdr *arp_header) {
     arp_header->opcode = ARP_REPLY;

@@ -21,11 +21,12 @@ int e1000_attach(struct pci_func * pciFunction) {
     // Map phy_mmio
     phy_mmio_addr = mmio_map_region(pciFunction->reg_base[0], pciFunction->reg_size[0]);
 
+    cprintf("Mapping E1000 TX area at %16lx.\n", PADDR(tx_desc_table));
     // Set TX Base Address Low
-    E1000_REG(E1000_TDBAL) = (uint64_t)PADDR(tx_desc_table);
+    E1000_REG(E1000_TDBAL) = (uint32_t)((uint64_t)PADDR(tx_desc_table) & 0xFFFFFFFF);
 
     // Set TX Base Address High
-    E1000_REG(E1000_TDBAH) = 0;
+    E1000_REG(E1000_TDBAH) = (uint32_t)((uint64_t)PADDR(tx_desc_table) >> 32);
 
     // Set TX Length
     E1000_REG(E1000_TDLEN) = sizeof(tx_desc_table);
@@ -37,7 +38,9 @@ int e1000_attach(struct pci_func * pciFunction) {
     E1000_REG(E1000_TDT) = 0;
 
     // Set TX Control Register
-    E1000_REG(E1000_TCTL) = E1000_TCTL_EN | E1000_TCTL_PSP | E1000_TCTL_CT | E1000_TCTL_COLD;
+    //E1000_REG(E1000_TCTL) = E1000_TCTL_EN | E1000_TCTL_PSP | E1000_TCTL_CT | E1000_TCTL_COLD;
+    E1000_REG(E1000_TCTL) = E1000_TCTL_EN | E1000_TCTL_PSP | (15 << 4) | (64 << 12);
+    //E1000_REG(E1000_TCTL) = 0b0110000000000111111000011111010;
 
     // Set TX Inter-packet Gap
     E1000_REG(E1000_TIPG) = 0x60200a;
@@ -111,11 +114,15 @@ int e1000_transmit(const char* buf, unsigned len) {
     tx_desc_table[tail_tx].length = len;
 
     // Set TX cmd as Report Status and End of Packet
-    tx_desc_table[tail_tx].cmd |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
+    //tx_desc_table[tail_tx].cmd |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
+    tx_desc_table[tail_tx].cmd = ((1 << 1) | (1 << 0) | (1 << 3));
+    tx_desc_table[tail_tx].status = 0;
 
     // Point to next TX Descriptor
+    uint32_t old_tail = tail_tx;
     tail_tx = (tail_tx + 1) % E1000_NU_DESC;
     E1000_REG(E1000_TDT) = tail_tx;
+    while(!(tx_desc_table[old_tail].status & 0xff) && !(tx_desc_table[old_tail].status & E1000_TXD_STAT_DD)) {}
 
     return 0;
 }

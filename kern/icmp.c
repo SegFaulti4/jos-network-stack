@@ -3,10 +3,10 @@
 #include <kern/inet.h>
 #include <inc/error.h>
 #include <kern/ethernet.h>
-#include <icmp.h>
+#include <kern/icmp.h>
 #include <inc/stdio.h>
 
-int 
+int
 icmp_echo_reply(struct ip_pkt* pkt) {
     struct icmp_pkt icmp_packet;
     int size = JNTOHS(pkt->hdr.ip_total_length - IP_HEADER_LEN);
@@ -20,7 +20,7 @@ icmp_echo_reply(struct ip_pkt* pkt) {
 
     hdr->msg_type = ECHO_REPLY;
     hdr->sequence_number += 1;
-    
+
     struct ip_pkt result;
     result.hdr.ip_protocol = IP_PROTO_ICMP;
     memcpy((void*)result.data, (void*)&icmp_packet, size);

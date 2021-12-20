@@ -5,7 +5,7 @@
 #include <inc/error.h>
 #include <inc/assert.h>
 #include <kern/arp.h>
-
+#include <kern/ip.h>
 
 int
 eth_send(struct eth_hdr* hdr, void* data, size_t len) {
@@ -27,17 +27,17 @@ eth_send(struct eth_hdr* hdr, void* data, size_t len) {
 int
 eth_recv(void* data) {
     char buf[ETH_MAX_PACKET_SIZE + 1];
-    struct eth_hdr* hdr;
+    struct eth_hdr hdr;
 
     int size = e1000_receive(buf);
     if (size < 0) return size;
 
-    memcpy((void*)hdr, (void*)buf, sizeof(struct eth_hdr));
-    hdr->eth_type = ntohs(hdr->eth_type);
+    memcpy((void*)&hdr, (void*)buf, sizeof(struct eth_hdr));
+    hdr.eth_type = ntohs(hdr.eth_type);
     memcpy(data, (void*)buf + sizeof(struct eth_hdr), size);
-    if (hdr->eth_type == ETH_TYPE_IP) {
+    if (hdr.eth_type == ETH_TYPE_IP) {
         return ip_recv(data);
-    } else if (hdr->eth_type == ETH_TYPE_ARP) {
+    } else if (hdr.eth_type == ETH_TYPE_ARP) {
         arp_resolve(data);
     } else {
         return -E_BAD_ETH_TYPE;

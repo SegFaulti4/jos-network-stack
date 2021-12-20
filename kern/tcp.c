@@ -23,4 +23,5 @@ tcp_send(struct tcp_virtual_channel* channel ,struct tcp_pkt* pkt, size_t length
 int
 tcp_recv(struct ip_pkt* pkt) {
     // some code here
+    return 0;
 }

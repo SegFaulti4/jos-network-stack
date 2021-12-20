@@ -1,6 +1,6 @@
 #include <kern/udp.h>
 #include <kern/inet.h>
-#include <string.h>
+#include <inc/string.h>
 #include <inc/stdio.h>
 
 int
