@@ -45,7 +45,9 @@ update_arp_table(struct arp_hdr *arp_header) {
         }
 
         if (entry->source_ip == arp_header->source_ip) {
-            memcpy(entry->source_mac, arp_header->source_mac, 6);
+            if (entry->state == DYNAMIC_STATE) {
+                memcpy(entry->source_mac, arp_header->source_mac, 6);
+            }
             break;
         }
     }
