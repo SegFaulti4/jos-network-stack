@@ -20,6 +20,7 @@
 
 #include <kern/e1000.h>
 #include <kern/udp.h>
+#include <kern/http.h>
 
 #define WHITESPACE "\t\r\n "
 #define MAXARGS    16
@@ -38,6 +39,7 @@ int mon_virt(int argc, char **argv, struct Trapframe *tf);
 int mon_e1000_recv(int argc, char **argv, struct Trapframe *tf);
 int mon_e1000_tran(int argc, char **argv, struct Trapframe *tf);
 int mon_eth_recv(int argc, char **argv, struct Trapframe *tf);
+int mon_http_test(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
    const char *name;
@@ -59,7 +61,8 @@ static struct Command commands[] = {
        {"virt", "Dump virtual list", mon_virt},
        {"e1000_recv", "Test e1000 receive", mon_e1000_recv},
        {"eth_recv", "Test eth receive", mon_eth_recv},
-       {"e1000_tran", "Test e1000 transmit", mon_e1000_tran}
+       {"e1000_tran", "Test e1000 transmit", mon_e1000_tran},
+       {"http_test", "Test http parsing", mon_http_test}
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -225,6 +228,18 @@ mon_e1000_tran(int argc, char **argv, struct Trapframe *tf) {
     return 0;
 }
 
+int
+mon_http_test(int argc, char **argv, struct Trapframe *tf) {
+    char *buf1 = "Hello, HTTP!";
+    cprintf("%s\n", http_parse(buf1, strlen(buf1)) ? "FAULT" : "SUCCESS");
+    char *buf2 = "POST /hello.world HTTP/1.1";
+    cprintf("%s\n", http_parse(buf2, strlen(buf2)) ? "FAULT" : "SUCCESS");
+    char *buf3 = "GET /hello.world HTTP/2";
+    cprintf("%s\n", http_parse(buf3, strlen(buf3)) ? "FAULT" : "SUCCESS");
+    char *buf4 = "GET /hello.world HTTP/1.1";
+    cprintf("%s\n", http_parse(buf4, strlen(buf4)) ? "FAULT" : "SUCCESS");
+    return 0;
+}
         /* Kernel monitor command interpreter */
 
 static int
