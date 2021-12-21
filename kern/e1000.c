@@ -164,6 +164,19 @@ int e1000_transmit(const char* buf, uint16_t len) {
     return 0;
 }
 
+int e1000_listen(void) {
+    while (1) {
+        uint32_t tail_rx = E1000_REG(E1000_RDT);
+        tail_rx = (tail_rx + 1) % E1000_NU_DESC;
+
+        // Check status of tail RX Descriptor
+        if (rx_desc_table[tail_rx].status & E1000_RXD_STAT_DD) {
+            break;
+        }
+    }
+    return 0;
+}
+
 int e1000_receive(char* buffer) {
     // Tail RX Descriptor Index
     uint32_t tail_rx = E1000_REG(E1000_RDT);

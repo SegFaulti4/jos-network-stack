@@ -202,6 +202,7 @@ mon_e1000_recv(int argc, char **argv, struct Trapframe *tf) {
 int
 mon_eth_recv(int argc, char **argv, struct Trapframe *tf) {
     char buf[1000];
+    e1000_listen();
     int len = eth_recv(buf);
     cprintf("received len: %d\n", len);
     cprintf("received packet: ");
