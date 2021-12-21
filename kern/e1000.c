@@ -1,6 +1,7 @@
 #include <kern/e1000.h>
 #include <kern/pci.h>
 #include <kern/pmap.h>
+#include <kern/timer.h>
 #include <inc/types.h>
 #include <inc/string.h>
 #include <inc/error.h>
@@ -173,6 +174,28 @@ int e1000_listen(void) {
         }
     }
     return 0;
+}
+
+int e1000_timeout_listen(double timeout) {
+    static uint64_t cpu_freq = 0;
+    if (!cpu_freq) {
+        cpu_freq = hpet_cpu_frequency();
+    }
+    uint64_t tsc0 = read_tsc(), tsc1;
+    do {
+        uint32_t tail_rx = E1000_REG(E1000_RDT);
+        tail_rx = (tail_rx + 1) % E1000_NU_DESC;
+
+        // Check status of tail RX Descriptor
+        if (rx_desc_table[tail_rx].status & E1000_RXD_STAT_DD) {
+            return 0;
+        }
+
+        asm("pause");
+        tsc1 = read_tsc();
+    } while (tsc1 - tsc0 < timeout * cpu_freq);
+    cprintf("TIMEOUT! (%d ms)\n", (uint32_t)(timeout * 1000));
+    return -1;
 }
 
 int e1000_receive(char* buffer) {
