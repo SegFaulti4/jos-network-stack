@@ -3,8 +3,6 @@
 
 #include <inc/types.h>
 #include <kern/ip.h>
-#define MY_IP ip2num((int8_t [4]){192, 168, 123, 2})
-//0xA000004
 
 #define ARP_ETHERNET 0x0001
 #define ARP_IPV4     0x0800

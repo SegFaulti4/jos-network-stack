@@ -6,10 +6,10 @@
 #include <kern/icmp.h>
 #include <inc/stdio.h>
 
-int 
+int
 icmp_echo_reply(struct ip_pkt* pkt) {
     struct icmp_pkt icmp_packet;
-    int size = JNTOHS(pkt->hdr.ip_total_length - IP_HEADER_LEN);
+    int size = JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN;
     memcpy((void*)&icmp_packet, (void*)pkt->data, size);
     struct icmp_hdr* hdr = &icmp_packet.hdr;
     if (hdr->msg_type != ECHO_REQUEST)
@@ -22,10 +22,14 @@ icmp_echo_reply(struct ip_pkt* pkt) {
     hdr->sequence_number = JNTOHS(hdr->sequence_number);
     hdr->sequence_number += 1;
     hdr->sequence_number = JHTONS(hdr->sequence_number);
-    
+
+    hdr->checksum = 0;
+    hdr->checksum = ip_checksum(&icmp_packet, sizeof(icmp_packet));
+
     struct ip_pkt result;
     result.hdr.ip_protocol = IP_PROTO_ICMP;
+    result.hdr.ip_source_address = JHTONL(MY_IP);
+    result.hdr.ip_destination_address = JHTONL(HOST_IP);
     memcpy((void*)result.data, (void*)&icmp_packet, size);
     return ip_send(&result, size);
-    return 0;
 }

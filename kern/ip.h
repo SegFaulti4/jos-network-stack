@@ -40,4 +40,7 @@ int ip_recv(struct ip_pkt* pkt);
 #define IP_PROTO_UDP  17
 #define IP_PROTO_TCP  6
 
+#define MY_IP ip2num((int8_t [4]){192, 168, 123, 2})
+#define HOST_IP ip2num((int8_t [4]){192, 168, 123, 1})
+
 #endif

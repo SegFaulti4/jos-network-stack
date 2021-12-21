@@ -14,10 +14,8 @@ udp_send(void* data, int length) {
     memcpy((void*)pkt.data, data, length);
     struct ip_pkt result;
     result.hdr.ip_protocol = IP_PROTO_UDP;
-    int8_t src_ip[] = {192, 168, 123, 2};
-    int8_t dst_ip[] = {192, 168, 123, 1};
-    result.hdr.ip_source_address = JHTONL(ip2num(src_ip));
-    result.hdr.ip_destination_address = JHTONL(ip2num(dst_ip));
+    result.hdr.ip_source_address = JHTONL(MY_IP);
+    result.hdr.ip_destination_address = JHTONL(HOST_IP);
     memcpy((void*)result.data, (void*)&pkt, length + sizeof(struct udp_hdr));
     return ip_send(&result, length + sizeof(struct udp_hdr));
 }
@@ -26,11 +24,11 @@ int
 udp_recv(struct ip_pkt* pkt) {
     cprintf("Processing UDP\n");
     struct udp_pkt upkt;
-    int size = JNTOHS(pkt->hdr.ip_total_length - IP_HEADER_LEN);
+    int size = JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN;
     memcpy((void*)&upkt, (void*)pkt->data, size);
     struct udp_hdr* hdr = &upkt.hdr;
-    cprintf("port: %d\n", hdr->destination_port);
-    for (size_t i = 0; i < hdr->length; i++) {
+    cprintf("port: %d\n", JNTOHS(hdr->destination_port));
+    for (size_t i = 0; i < JNTOHS(hdr->length); i++) {
         cprintf("%c", upkt.data[i]);
     }
     cprintf("\n");
