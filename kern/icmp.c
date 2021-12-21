@@ -44,12 +44,9 @@ icmp_echo_reply(struct ip_pkt* pkt) {
         return -E_INV_ICMP_CODE;
 
     hdr->msg_type = ECHO_REPLY;
-    hdr->sequence_number = JNTOHS(hdr->sequence_number);
-    hdr->sequence_number += 1;
-    hdr->sequence_number = JHTONS(hdr->sequence_number);
 
-    hdr->checksum = 0;
-    hdr->checksum = get_checksum((void*)&icmp_packet, sizeof(icmp_packet));
+    hdr->checksum = JNTOHS(hdr->checksum) + 0x0800;
+    hdr->checksum = JHTONS(hdr->checksum);
 
     struct ip_pkt result;
     result.hdr.ip_protocol = IP_PROTO_ICMP;
