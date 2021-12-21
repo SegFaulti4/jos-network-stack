@@ -23,7 +23,19 @@ struct arp_hdr {
     uint32_t target_ip;
 } __attribute__((packed));
 
+struct arp_cache_table {
+    uint32_t source_ip;
+    uint8_t source_mac[6];
+    unsigned int state;
+};
+
+#define FREE_STATE 0
+#define STATIC_STATE 1
+#define DYNAMIC_STATE 2
+
 void arp_resolve(void* data);
 void arp_reply(struct arp_hdr *arp_header);
+uint8_t * get_mac_by_ip(uint32_t ip);
+void initialize_arp_table();
 
 #endif
