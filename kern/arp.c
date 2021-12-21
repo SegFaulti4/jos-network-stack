@@ -20,7 +20,7 @@ uint8_t * get_mac_by_ip(uint32_t ip) {
 
 void initialize_arp_table() {
     struct arp_cache_table *entry;
-    entry = &arp_table[0];
+    entry = &arp_table[ARP_TABLE_MAX_SIZE - 1]; // it shall be just default MAC
     entry->source_ip = JHTONL(HOST_IP);
     uint8_t mac[6] = {0xca, 0xfe, 0x33, 0x53, 0x82, 0x87};
     memcpy(entry->source_mac, mac, 6);
