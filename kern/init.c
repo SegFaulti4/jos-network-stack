@@ -20,6 +20,7 @@
 #include <kern/traceopt.h>
 #include <kern/pci.h>
 #include <kern/e1000.h>
+#include <kern/arp.h>
 
 void
 timers_init(void) {
@@ -156,6 +157,7 @@ i386_init(void) {
     /* User environment initialization functions */
     env_init();
     pci_init();
+    initialize_arp_table();
 
     assert(false);
 

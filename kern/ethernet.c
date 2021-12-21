@@ -9,13 +9,15 @@
 
 //52:54:00:12:34:56
 const char qemu_mac[6] = {0x52, 0x54, 0x0, 0x12, 0x34, 0x56};
-const char hard_code_destination_mac[6] = {0x0a, 0x62, 0x19, 0xc2, 0x2d, 0x0d};//{0x3a, 0xbe, 0x6d, 0xa0, 0xaf, 0x00};
 
 int
 eth_send(struct eth_hdr* hdr, void* data, size_t len) {
     assert(len <= ETH_MAX_PACKET_SIZE - sizeof(struct eth_hdr));
     memcpy((void*)hdr->eth_source_mac, qemu_mac, sizeof(hdr->eth_source_mac));
-    memcpy((void*)hdr->eth_destination_mac, hard_code_destination_mac, sizeof(hdr->eth_destination_mac));
+    if (hdr->eth_type == JHTONS(ETH_TYPE_IP)) {
+        struct ip_hdr* ip_header = &((struct ip_pkt*)data)->hdr;
+        memcpy(hdr->eth_destination_mac, get_mac_by_ip(ip_header->ip_destination_address), 6);
+    }
 
     char buf[ETH_MAX_PACKET_SIZE + 1];
 

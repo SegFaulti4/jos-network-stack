@@ -14,7 +14,6 @@ int eth_send(struct eth_hdr* hdr, void* data, size_t len);
 int eth_recv(void* data);
 
 extern const char qemu_mac[6];
-extern const char hard_code_destination_mac[6];
 
 #define ETH_MAX_PACKET_SIZE 1500
 #define ETH_HEADER_LEN sizeof(struct eth_hdr)
