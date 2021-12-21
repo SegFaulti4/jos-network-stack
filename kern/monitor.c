@@ -201,15 +201,17 @@ mon_e1000_recv(int argc, char **argv, struct Trapframe *tf) {
 
 int
 mon_eth_recv(int argc, char **argv, struct Trapframe *tf) {
-    char buf[1000];
-    e1000_listen();
-    int len = eth_recv(buf);
-    cprintf("received len: %d\n", len);
-    cprintf("received packet: ");
-    for (int i = 0; i < len; i++) {
-        cprintf("%x ", buf[i] & 0xff);
+    while (1) {
+        char buf[1000];
+        e1000_listen();
+        int len = eth_recv(buf);
+        cprintf("received len: %d\n", len);
+        cprintf("received packet: ");
+        for (int i = 0; i < len; i++) {
+            cprintf("%x ", buf[i] & 0xff);
+        }
+        cprintf("\n");
     }
-    cprintf("\n");
     return 0;
 }
 

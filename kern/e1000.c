@@ -79,7 +79,7 @@ void e1000_transmit_init() {
 
 void e1000_receive_init() {
     // Set RX Base Address Low
-    E1000_REG(E1000_RDBAL) = PADDR(rx_desc_table);
+    E1000_REG(E1000_RDBAL) = (uint32_t)PADDR(rx_desc_table);
 
     // Set RX Base Address High
     E1000_REG(E1000_RDBAH) = 0;
@@ -114,10 +114,9 @@ int e1000_attach(struct pci_func * pciFunction) {
     // Map phy_mmio
     phy_mmio_addr = mmio_map_region(pciFunction->reg_base[0], pciFunction->reg_size[0]);
 
-    // Set RX Address Low and High as
+    // We don't have to set RX Address Low and High as
     // MAC address 52:54:00:12:34:56
-    E1000_REG(E1000_RAL) = 0x12005452;
-    *(uint16_t *)&E1000_REG(E1000_RAH) = 0x5634;
+    // because it's already done in qemu options
 
     // Set Multicast Table Array
     E1000_REG(E1000_MTA) = 0;
@@ -129,7 +128,6 @@ int e1000_attach(struct pci_func * pciFunction) {
 
     return 1;
 }
-
 
 int e1000_transmit(const char* buf, uint16_t len) {
     // Trunk packet length

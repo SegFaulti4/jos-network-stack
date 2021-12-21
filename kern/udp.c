@@ -24,6 +24,7 @@ udp_send(void* data, int length) {
 
 int
 udp_recv(struct ip_pkt* pkt) {
+    cprintf("Processing UDP\n");
     struct udp_pkt upkt;
     int size = JNTOHS(pkt->hdr.ip_total_length - IP_HEADER_LEN);
     memcpy((void*)&upkt, (void*)pkt->data, size);

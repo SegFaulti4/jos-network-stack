@@ -64,10 +64,7 @@ ip_send(struct ip_pkt* pkt, uint16_t length) {
 
 int
 ip_recv(struct ip_pkt* pkt) {
-    int res = eth_recv((void*)pkt);
-    if (res < 0) {
-        return res;
-    }
+    cprintf("Processing IP\n");
     struct ip_hdr* hdr = &pkt->hdr;
     if (hdr->ip_verlen != IP_VER_LEN) {
         return -E_UNS_VER;
