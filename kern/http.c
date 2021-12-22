@@ -2,10 +2,8 @@
 #include <inc/string.h>
 #include <kern/tcp.h>
 #include <kern/http.h>
-// temporary:
-#include <kern/udp.h>
 
-static const char *OK_page = "<html><body><h1>Hello from JOS!</h1></body></html>";
+static const char *OK_page = "<!DOCTYPE html>\n<html><body><h1>Hello from JOS!</h1></body></html>";
 // static const char *Err_page = "<html><body><h1>Ooops! Somebodies marks are decreasing...</h1></body></html>";
 
 int
@@ -68,16 +66,37 @@ http_reply(int code, const char *page, char *reply, size_t *reply_len) {
     cur_pos++;
     memcpy(cur_pos, messages[code], strlen(messages[code]));
     cur_pos += strlen(messages[code]);
-    *cur_pos = '\n';
-    cur_pos++;
 
-    //memcpy(cur_pos, "\nContent-Length: ", strlen("\nContent-Length: "));
-    //size_t page_len = strlen(page);
-    //char page_len_text[10] = {};
+    char type_field[] = "\nContent-Type: text/html\n";
+    memcpy(cur_pos, type_field, sizeof(type_field) - 1);
+    cur_pos += sizeof(type_field) - 1;
 
     if (page) {
+        char length_field[] = "Content-Length: ";
+        memcpy(cur_pos, length_field, sizeof(length_field) - 1);
+        cur_pos += sizeof(length_field) - 1;
+
+        size_t page_len = page ? strlen(page) : 0;
+        char page_len_text[10] = {};
+        int page_len_text_start = 9;
+        for (page_len_text_start = 9; page_len_text_start >= 0 && page_len > 0; page_len_text_start--) {
+            page_len_text[page_len_text_start] = page_len % 10 + '0';
+            page_len /= 10;
+        }
+        page_len_text_start++;
+        memcpy(cur_pos, page_len_text + page_len_text_start, 10 - page_len_text_start);
+        cur_pos += (10 - page_len_text_start);
+
+        *cur_pos = '\n';
+        cur_pos++;
+        *cur_pos = '\n';
+        cur_pos++;
         memcpy(cur_pos, page, strlen(page));
         cur_pos += strlen(page);
+    } else {
+        char length_field[] = "\nContent-Length: 0";
+        memcpy(cur_pos, length_field, sizeof(length_field) - 1);
+        cur_pos += sizeof(length_field) - 1;
     }
     *cur_pos = '\0';
     *reply_len = cur_pos - reply;
