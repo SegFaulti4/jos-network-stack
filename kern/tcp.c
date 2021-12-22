@@ -20,6 +20,14 @@ void tcp_init_vc() {
 }
 
 int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length) {
+    pkt->hdr.seq_num = channel->ack_seq.seq_num;
+    pkt->hdr.ack_num = channel->ack_seq.ack_num;
+    pkt->hdr.src_port = channel->host_side.port;
+    pkt->hdr.dst_port = channel->guest_side.port;
+    pkt->hdr.win_size = sizeof(channel->buffer);
+
+    // TODO chesksum
+
     struct ip_pkt result;
     struct ip_hdr* hdr = &result.hdr;
 
@@ -57,6 +65,19 @@ int match_listen_ip(struct tcp_virtual_channel *vc, uint32_t src_ip) {
     return 1;
 }
 
+int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
+    struct tcp_pkt ack_pkt = {};
+    ack_pkt.hdr.data_offset = TCP_HEADER_LEN;
+    ack_pkt.flags = flags | TH_ACK;
+    int r = tcp_send(vc, &ack_pkt, 0);
+
+    if (r == -1) {
+        cprintf("tcp send error\n");
+    }
+
+    return r;
+}
+
 int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
     struct tcp_virtual_channel * vc = match_tcp_vc(pkt);
     if (vc == NULL) {
@@ -68,14 +89,16 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
         // not implemented
         break;
     case LISTEN:
-        if (pkt->hdr.syn) {
+        if (pkt->hdr.flags & TH_SYN) {
             if (match_listen_ip(vc, src_ip)) {
                 // trivial seq num
                 vc->ack_seq.seq_num = pkt->hdr.seq_num;
                 vc->guest_side.ip = src_ip;
                 vc->guest_side.port = pkt->hdr.src_port;
-                // TODO: send with ack = pkt->hdr.seq_num + 1
-                // tcp_send_ack();
+                vc->ack_seq.ack_num = pkt->hdr.seq_num + 1;
+                tcp_send_ack(vc, TH_SYN);
+
+                vc->state = SYN_RECEIVED;
             } else {
                 cprintf("Source IP");
                 num2ip(src_ip);
@@ -92,8 +115,30 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
     case SYN_SENT:
         break;
     case SYN_RECEIVED:
+        if (pkt->hdr.flags & TH_ACK) {
+            if (src_ip != vc->guest_side.ip) {
+                cprintf("Wrong IP -");
+                num2ip(src_ip);
+                cprintf(" is not");
+                num2ip(vc->guest_side.ip);
+                cprintf("\n");
+                goto error;
+            }
+            if (pkt->hdr.seq_num != vc->ack_seq.ack_num ||
+                pkt->hdr.ack_num != vc->ack_seq.seq_num + 1) {
+                cprintf("Wrond ack seq\n");
+                goto error;
+            }
+            vc->state = ESTABLISHED;
+        } else {
+            cprintf("ACK flag is not provided\n");
+            goto error;
+        }
         break;
     case ESTABLISHED:
+        // TODO Established
+        cprintf("ESTABLISHED\n");
+        while (1) {}
         break;
     case FIN_WAIT_1:
         break;

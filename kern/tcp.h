@@ -5,35 +5,32 @@
 #include <kern/ip.h>
 
 struct tcp_hdr {
-    uint16_t src_port;
-    uint16_t dst_port;
-    uint32_t seq_num;
-    uint32_t ack_num;
+    uint16_t src_port; // auto in tcp_send
+    uint16_t dst_port; // auto in tcp_send
+    uint32_t seq_num; // auto in tcp_send
+    uint32_t ack_num; // auto in tcp_send
     uint8_t data_offset : 4;
     uint8_t reserved : 3;
     uint8_t ns : 1,
-            cwr : 1,
-            ece : 1,
-            urg : 1,
-            ack : 1,
-            psh : 1,
-            rst : 1,
-            syn : 1,
-            fin : 1;
-    uint16_t win_size;
-    uint16_t checksum;
+    uint8_t flags;
+    uint16_t win_size; // auto in tcp_send
+    uint16_t checksum; // auto in tcp_send
     uint16_t urgent;
 } __attribute__((packed));
 
-#define TH_FIN  0x01
-#define TH_SYN  0x02
-#define TH_RST  0x04
-#define TH_PUSH 0x08
-#define TH_ACK  0x10
-#define TH_URG  0x20
+#define TH_FIN 0x01
+#define TH_SYN 0x02
+#define TH_RST 0x04
+#define TH_PSH 0x08
+#define TH_ACK 0x10
+#define TH_URG 0x20
+#define TH_ECE 0x40
+#define TH_CWR 0x80
+#define TH_NS  0x100
 
 #define TCP_HEADER_LEN sizeof(struct tcp_hdr)
 #define TCP_DATA_LEN (IP_DATA_LEN - TCP_HEADER_LEN)
+#define TCP_WINDOW_SIZE TCP_DATA_LEN * 10
 
 struct tcp_pkt {
     struct tcp_hdr hdr;
@@ -69,7 +66,7 @@ struct tcp_virtual_channel {
     struct tcp_endpoint host_side;
     struct tcp_endpoint guest_side;
     struct tcp_ack_seq ack_seq;
-    uint8_t buffer[TCP_DATA_LEN * 10];
+    uint8_t buffer[TCP_WINDOW_SIZE];
     uint32_t data_len;
 };
 
