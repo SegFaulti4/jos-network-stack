@@ -34,9 +34,7 @@ int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t le
     pkt->hdr.dst_port = JHTONS(channel->guest_side.port);
     pkt->hdr.win_size = JHTONS(sizeof(channel->buffer));
 
-    // TODO chesksum
-
-    struct ip_pkt result;
+    struct ip_pkt result = {};
     struct ip_hdr* hdr = &result.hdr;
 
     hdr->ip_protocol = IP_PROTO_TCP;
@@ -44,6 +42,16 @@ int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t le
     hdr->ip_destination_address = JHTONL(channel->guest_side.ip);
 
     size_t data_length = TCP_HEADER_LEN + length;
+    pkt->hdr.checksum = 0;
+    uint8_t buf[IP_DATA_LEN + 12] = {};
+    memcpy((void *)buf + 12, (void*)pkt, data_length);
+    memcpy((void *)buf, (void *)&hdr->ip_source_address, sizeof(hdr->ip_source_address));
+    memcpy((void *)buf + 4, (void *)&hdr->ip_destination_address, sizeof(hdr->ip_destination_address));
+    buf[8] = 0;
+    buf[8 + 1] = hdr->ip_protocol;
+    uint32_t network_data_length = JHTONS(data_length);
+    memcpy((void *)buf + 8 + 2, (void *)&network_data_length, sizeof(network_data_length));
+    pkt->hdr.checksum = JHTONS(JNTOHS(ip_checksum(buf, data_length + 12)) - channel->host_side.port);
     memcpy((void*)result.data, (void*)pkt, data_length);
 
     dump_tcp_hdr(&(pkt->hdr));
