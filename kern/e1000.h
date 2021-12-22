@@ -46,7 +46,7 @@ struct rx_desc {
 // Transmit control
 #define E1000_TCTL_EN   0x00000002  // Enable TX
 #define E1000_TCTL_PSP  0x00000008  // Pad Short Packets
-#define E1000_TCTL_CT   0x00000ff0   // Collision Threshold
+#define E1000_TCTL_CT   0x00000ff0  // Collision Threshold
 #define E1000_TCTL_COLD 0x003ff000  // Collision Distance
 
 // TX Descriptor bit definitions

@@ -5,10 +5,10 @@
 #include <kern/ip.h>
 
 struct tcp_hdr {
-    uint16_t source_port;
-    uint16_t destination_port;
-    uint32_t sequence_number;
-    uint32_t acknowledgement_number;
+    uint16_t src_port;
+    uint16_t dst_port;
+    uint32_t seq_num;
+    uint32_t ack_num;
     uint8_t data_offset : 4;
     uint8_t reserved : 3;
     uint8_t ns : 1,
@@ -20,10 +20,17 @@ struct tcp_hdr {
             rst : 1,
             syn : 1,
             fin : 1;
-    uint16_t window_size;
+    uint16_t win_size;
     uint16_t checksum;
-    uint16_t urgent_pointer;
+    uint16_t urgent;
 } __attribute__((packed));
+
+#define TH_FIN  0x01
+#define TH_SYN  0x02
+#define TH_RST  0x04
+#define TH_PUSH 0x08
+#define TH_ACK  0x10
+#define TH_URG  0x20
 
 #define TCP_HEADER_LEN sizeof(struct tcp_hdr)
 #define TCP_DATA_LEN (IP_DATA_LEN - TCP_HEADER_LEN)
@@ -40,11 +47,11 @@ enum tcp_state {
     SYN_RECEIVED,
     ESTABLISHED,
     FIN_WAIT_1,
-    CLOSE_WAIT,
-    FIN_WAIT_2,
-    LAST_ACK,
-    TIME_WAIT,
     CLOSING,
+    FIN_WAIT_2,
+    TIME_WAIT,
+    CLOSE_WAIT,
+    LAST_ACK
 };
 
 struct tcp_endpoint {
@@ -53,19 +60,20 @@ struct tcp_endpoint {
 };
 
 struct tcp_ack_seq {
-    uint32_t sequence_number;
-    uint32_t acknowledgement_number;
+    uint32_t seq_num;
+    uint32_t ack_num;
 };
 
 struct tcp_virtual_channel {
-    int socket_id;
     enum tcp_state state;
-    struct tcp_endpoint my_side;
-    struct tcp_endpoint client_side;
-    struct tcp_ack_seq channel_situation;
+    struct tcp_endpoint host_side;
+    struct tcp_endpoint guest_side;
+    struct tcp_ack_seq ack_seq;
     uint8_t buffer[TCP_DATA_LEN * 10];
     uint32_t data_len;
 };
+
+#define TCP_VC_NUM 64
 
 int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length);
 int tcp_recv(struct ip_pkt* pkt);

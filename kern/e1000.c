@@ -78,7 +78,7 @@ void e1000_transmit_init() {
 
 void e1000_receive_init() {
     // Set RX Base Address Low
-    E1000_REG(E1000_RDBAL) = (uint32_t)PADDR(rx_desc_table);
+    E1000_REG(E1000_RDBAL) = PADDR(rx_desc_table);
 
     // Set RX Base Address High
     E1000_REG(E1000_RDBAH) = 0;
@@ -114,8 +114,15 @@ int e1000_attach(struct pci_func * pciFunction) {
     phy_mmio_addr = mmio_map_region(pciFunction->reg_base[0], pciFunction->reg_size[0]);
 
     // We don't have to set RX Address Low and High as
+    uint32_t num1 = E1000_REG(E1000_RAL);
+    uint32_t num2 = E1000_REG(E1000_RAH);
+    cprintf("MAC - %02x:%02x:%02x:%02x:%02x:%02x\n", num1 & 0xff, (num1 >> 8) & 0xff, (num1 >> 16) & 0xff, (num1 >> 24) & 0xff, num2 & 0xff, (num2 >> 8) & 0xff);
+
+    // Set RX Address Low and High as
     // MAC address 52:54:00:12:34:56
     // because it's already done in qemu options
+    // E1000_REG(E1000_RAL) = 0x52540012;
+    // *(uint16_t *)&E1000_REG(E1000_RAH) = 0x3456;
 
     // Set Multicast Table Array
     E1000_REG(E1000_MTA) = 0;
@@ -135,8 +142,6 @@ int e1000_transmit(const char* buf, uint16_t len) {
     // Tail TX Descriptor Index
     uint32_t tail_tx = E1000_REG(E1000_TDT);
 
-    dump_tx_desc(tail_tx);
-
     // Check status of tail TX Descriptor
     if (!(tx_desc_table[tail_tx].status & E1000_TXD_STAT_DD)) {
         cprintf("E1000 transmit queue is full\n");
@@ -151,6 +156,8 @@ int e1000_transmit(const char* buf, uint16_t len) {
 
     // Clear TX status Descriptor Done
     tx_desc_table[tail_tx].status &= ~E1000_TXD_STAT_DD;
+
+    dump_tx_desc(tail_tx);
 
     // Point to next TX Descriptor
     E1000_REG(E1000_TDT) = (tail_tx + 1) % E1000_NU_DESC;
