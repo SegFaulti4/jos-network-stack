@@ -4,6 +4,7 @@
 #include <inc/error.h>
 #include <inc/stdio.h>
 #include <kern/tcp.h>
+#include <kern/http.h>
 
 struct tcp_virtual_channel tcp_vc[TCP_VC_NUM];
 
@@ -87,7 +88,7 @@ int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     return r;
 }
 
-int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
+int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
     struct tcp_virtual_channel * vc = match_tcp_vc(pkt);
     if (vc == NULL) {
         cprintf("No TCP VC match for packet\n");
@@ -146,8 +147,47 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
         break;
     case ESTABLISHED:
         // TODO Established
-        cprintf("ESTABLISHED\n");
-        while (1) {}
+        if (pkt->hdr.flags & TH_ACK) {
+            if (src_ip != vc->guest_side.ip) {
+                cprintf("Wrong IP -");
+                num2ip(src_ip);
+                cprintf(" is not");
+                num2ip(vc->guest_side.ip);
+                cprintf("\n");
+                goto error;
+            }
+            if (JNTOHL(pkt->hdr.seq_num) != vc->ack_seq.ack_num ||
+                JNTOHL(pkt->hdr.ack_num) != vc->ack_seq.seq_num) {
+                cprintf("Wrond ack seq\n");
+                goto error;
+            }
+            if (vc->data_len + tcp_data_len >= TCP_WINDOW_SIZE) {
+                cprintf("Buffer overflow\n");
+                goto error;
+            }
+            memcpy((void *)vc->buffer + vc->data_len, (void *)pkt->data, tcp_data_len);
+            vc->data_len += tcp_data_len;
+            vc->ack_seq.ack_num += tcp_data_len;
+            tcp_send_ack(vc, 0);
+
+            if (pkt->hdr.flags & TH_PSH) {
+                char reply[1024] = {};
+                size_t reply_len = 0;
+                http_parse((char *)vc->buffer, vc->data_len, (char *)&reply, &reply_len);
+                struct tcp_pkt data_pkt = {};
+                data_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
+                data_pkt.hdr.flags = TH_ACK | TH_PSH;
+                int r = tcp_send(vc, &data_pkt, reply_len);
+                if (r == -1) {
+                    cprintf("tcp send error\n");
+                    goto error;
+                }
+                vc->ack_seq.seq_num += reply_len;
+            }
+        } else {
+            cprintf("ACK flag is not provided\n");
+            goto error;
+        }
         break;
     case FIN_WAIT_1:
         break;
@@ -179,5 +219,5 @@ int tcp_recv(struct ip_pkt* pkt) {
     }
     struct tcp_pkt tcp_pkt;
     memcpy((void *)&tcp_pkt, (void *)pkt->data, JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN);
-    return tcp_process(&tcp_pkt, JNTOHL(pkt->hdr.ip_source_address));
+    return tcp_process(&tcp_pkt, JNTOHL(pkt->hdr.ip_source_address), JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN - TCP_HEADER_LEN);
 }
