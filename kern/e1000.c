@@ -6,16 +6,14 @@
 #include <inc/string.h>
 #include <inc/error.h>
 
-#define E1000_REG(offset) (phy_mmio_addr[offset >> 2])
-
 // Base mmio address
 volatile uint32_t *phy_mmio_addr;
+#define E1000_REG(offset) (phy_mmio_addr[offset >> 2])
 
 struct tx_desc tx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)));
 struct rx_desc rx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)));
 char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
 char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
-
 
 void dump_tx_desc(uint32_t tx_idx) {
     cprintf("\nTX Desc %u:\n", tx_idx);
@@ -153,9 +151,6 @@ int e1000_transmit(const char* buf, uint16_t len) {
 
     // Clear TX status Descriptor Done
     tx_desc_table[tail_tx].status &= ~E1000_TXD_STAT_DD;
-
-    // Set TX cmd as Report Status and End of Packet
-    // tx_desc_table[tail_tx].cmd |= (E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP);
 
     // Point to next TX Descriptor
     E1000_REG(E1000_TDT) = (tail_tx + 1) % E1000_NU_DESC;

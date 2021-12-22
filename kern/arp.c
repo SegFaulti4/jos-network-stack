@@ -7,7 +7,8 @@
 
 static struct arp_cache_table arp_table[ARP_TABLE_MAX_SIZE];
 
-uint8_t * get_mac_by_ip(uint32_t ip) {
+uint8_t *
+get_mac_by_ip(uint32_t ip) {
     struct arp_cache_table *entry;
     for (int i = 0; i < ARP_TABLE_MAX_SIZE; i++) {
         entry = &arp_table[i];
@@ -18,7 +19,8 @@ uint8_t * get_mac_by_ip(uint32_t ip) {
     return NULL;
 }
 
-void initialize_arp_table() {
+void
+initialize_arp_table() {
     struct arp_cache_table *entry;
     entry = &arp_table[ARP_TABLE_MAX_SIZE - 1]; // it shall be just default MAC
     entry->source_ip = JHTONL(HOST_IP);
@@ -58,13 +60,13 @@ update_arp_table(struct arp_hdr *arp_header) {
     return 0;
 }
 
-
-void arp_reply(struct arp_hdr *arp_header) {
+void
+arp_reply(struct arp_hdr *arp_header) {
     cprintf("In arp_reply\n");
     arp_header->opcode = ARP_REPLY;
     memcpy(arp_header->target_mac, arp_header->source_mac, 6);
     arp_header->target_ip = arp_header->source_ip;
-    memcpy(arp_header->source_mac, qemu_mac, 6);
+    memcpy(arp_header->source_mac, get_my_mac(), 6);
     arp_header->source_ip = JHTONL(MY_IP);
 
     arp_header->opcode = JHTONS(arp_header->opcode);
@@ -81,8 +83,8 @@ void arp_reply(struct arp_hdr *arp_header) {
     }
 }
 
-
-void arp_resolve(void* data) {
+void
+arp_resolve(void* data) {
     cprintf("In arp_resolve\n");
     struct arp_hdr *arp_header;
 

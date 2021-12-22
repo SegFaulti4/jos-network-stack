@@ -6,7 +6,6 @@
 #include <kern/icmp.h>
 #include <inc/stdio.h>
 
-
 int
 icmp_echo_reply(struct ip_pkt* pkt) {
     struct icmp_pkt icmp_packet;
@@ -15,12 +14,10 @@ icmp_echo_reply(struct ip_pkt* pkt) {
     struct icmp_hdr* hdr = &icmp_packet.hdr;
     if (hdr->msg_type != ECHO_REQUEST)
         return -E_UNS_ICMP_TYPE;
-
     if (hdr->msg_code != 0)
         return -E_INV_ICMP_CODE;
 
     hdr->msg_type = ECHO_REPLY;
-
     hdr->checksum = JNTOHS(hdr->checksum) + 0x0800;
     hdr->checksum = JHTONS(hdr->checksum);
 

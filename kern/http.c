@@ -8,7 +8,8 @@
 static const char *OK_page = "<html><body><h1>Hello from JOS!</h1></body></html>";
 // static const char *Err_page = "<html><body><h1>Ooops! Somebodies marks are decreasing...</h1></body></html>";
 
-int http_parse(char *data, size_t length) {
+int
+http_parse(char *data, size_t length) {
     cprintf("Processing HTTP\n");
     struct HTTP_hdr hdr = {};
     char *word_start = data;
@@ -46,7 +47,8 @@ int http_parse(char *data, size_t length) {
     return http_reply(200, OK_page);
 }
 
-int http_reply(int code, const char *page) {
+int
+http_reply(int code, const char *page) {
     static const char *messages[600] = {};
     if (!messages[200]) { // first init
         messages[200] = "200 OK";
