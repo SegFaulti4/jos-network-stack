@@ -175,12 +175,11 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
             vc->ack_seq.ack_num += tcp_data_len;
 
             if (pkt->hdr.flags & TH_PSH) {
-                char reply[1024] = {};
                 size_t reply_len = 0;
-                http_parse((char *)vc->buffer, vc->data_len, (char *)&reply, &reply_len);
                 struct tcp_pkt data_pkt = {};
                 data_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
                 data_pkt.hdr.flags = TH_ACK | TH_PSH;
+                http_parse((char *)vc->buffer, vc->data_len, (char *)&data_pkt.data, &reply_len);
                 int r = tcp_send(vc, &data_pkt, reply_len);
                 if (r == -1) {
                     cprintf("tcp send error\n");
