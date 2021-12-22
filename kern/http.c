@@ -9,7 +9,7 @@ static const char *OK_page = "<html><body><h1>Hello from JOS!</h1></body></html>
 // static const char *Err_page = "<html><body><h1>Ooops! Somebodies marks are decreasing...</h1></body></html>";
 
 int
-http_parse(char *data, size_t length) {
+http_parse(char *data, size_t length, char *reply, size_t *reply_len) {
     cprintf("Processing HTTP\n");
     struct HTTP_hdr hdr = {};
     char *word_start = data;
@@ -20,7 +20,7 @@ http_parse(char *data, size_t length) {
             if (!hdr.method.start) {
                 if (strncmp(word_start, HTTP_METHOD, strlen(HTTP_METHOD))) {
                     cprintf("Only %s requests are supported!\n", HTTP_METHOD);
-                    return http_reply(400, NULL);
+                    return http_reply(400, NULL, reply, reply_len);
                 }
                 hdr.method.start = word_start;
                 hdr.method.length = word_len;
@@ -30,7 +30,7 @@ http_parse(char *data, size_t length) {
             } else if (!hdr.HTTP_version.start) {
                 if (strncmp(word_start, HTTP_VER, strlen(HTTP_VER))) {
                     cprintf("Only %s is supported!\n", HTTP_VER);
-                    return http_reply(505, NULL);
+                    return http_reply(505, NULL, reply, reply_len);
                 }
                 hdr.HTTP_version.start = word_start;
                 hdr.HTTP_version.length = word_len;
@@ -41,14 +41,14 @@ http_parse(char *data, size_t length) {
     }
     if (!hdr.HTTP_version.start) {
         cprintf("HTTP header incomplete!\n");
-        return http_reply(400, NULL);
+        return http_reply(400, NULL, reply, reply_len);
     }
 
-    return http_reply(200, OK_page);
+    return http_reply(200, OK_page, reply, reply_len);
 }
 
 int
-http_reply(int code, const char *page) {
+http_reply(int code, const char *page, char *reply, size_t *reply_len) {
     static const char *messages[600] = {};
     if (!messages[200]) { // first init
         messages[200] = "200 OK";
@@ -61,7 +61,6 @@ http_reply(int code, const char *page) {
         code = 520;
     }
 
-    char reply[1024] = {};
     char *cur_pos = reply;
     memcpy(cur_pos, HTTP_VER, strlen(HTTP_VER));
     cur_pos += strlen(HTTP_VER);
@@ -81,5 +80,6 @@ http_reply(int code, const char *page) {
         cur_pos += strlen(page);
     }
     *cur_pos = '\0';
-    return udp_send(reply, cur_pos - reply);
+    *reply_len = cur_pos - reply;
+    return 0;
 }
