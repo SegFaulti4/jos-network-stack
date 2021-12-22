@@ -15,5 +15,6 @@ int http_reply(int code, const char *page, char *reply, size_t *reply_len);
 
 #define HTTP_METHOD "GET"
 #define HTTP_VER "HTTP/1.1"
+#define HTTP_VER_COMPATIBLE "HTTP/1.0"
 
 #endif

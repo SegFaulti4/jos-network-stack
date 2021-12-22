@@ -18,10 +18,16 @@ void dump_tcp_hdr(struct tcp_hdr *hdr) {
 }
 
 void tcp_init_vc() {
-    for (int i = 0; i < TCP_VC_NUM; i++) {
+    tcp_vc[0].state = LISTEN;
+    tcp_vc[0].host_side.ip = MY_IP;
+    tcp_vc[0].host_side.port = 80;
+    // tcp connection from host OS is expected
+    tcp_vc[0].guest_side.ip = HOST_IP;
+    tcp_vc[0].guest_side.port = 8080;
+    for (int i = 1; i < TCP_VC_NUM; i++) {
         tcp_vc[i].state = LISTEN;
         tcp_vc[i].host_side.ip = MY_IP;
-        tcp_vc[i].host_side.port = i + 1;
+        tcp_vc[i].host_side.port = i;
         // tcp connection from host OS is expected
         tcp_vc[i].guest_side.ip = HOST_IP;
         tcp_vc[i].guest_side.port = 8080;
@@ -62,7 +68,6 @@ int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t le
 
 struct tcp_virtual_channel * match_tcp_vc(struct tcp_pkt *pkt) {
     for (int i = 0; i < TCP_VC_NUM; i++) {
-        cprintf("%u - %u\n", tcp_vc[i].host_side.port, JNTOHS(pkt->hdr.dst_port));
         if (tcp_vc[i].host_side.port == JNTOHS(pkt->hdr.dst_port)) {
             return &tcp_vc[i];
         }
@@ -89,7 +94,7 @@ int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
 }
 
 int check_ack_seq(struct tcp_virtual_channel * vc, struct tcp_hdr ack_seq) {
-    cprintf("%u %u - %u %u\n", vc->ack_seq.ack_num, vc->ack_seq.seq_num, ack_seq.ack_num, ack_seq.seq_num);
+    cprintf("%u %u - %u %u\n", vc->ack_seq.ack_num, vc->ack_seq.seq_num, (uint32_t)JNTOHL(ack_seq.ack_num), (uint32_t)JNTOHL(ack_seq.seq_num));
 
     return JNTOHL(ack_seq.seq_num) == vc->ack_seq.ack_num &&
            JNTOHL(ack_seq.ack_num) == vc->ack_seq.seq_num;
@@ -178,14 +183,15 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
                 size_t reply_len = 0;
                 struct tcp_pkt data_pkt = {};
                 data_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
-                data_pkt.hdr.flags = TH_ACK | TH_PSH;
+                data_pkt.hdr.flags = TH_ACK | TH_PSH | TH_FIN;
                 http_parse((char *)vc->buffer, vc->data_len, (char *)&data_pkt.data, &reply_len);
                 int r = tcp_send(vc, &data_pkt, reply_len);
                 if (r == -1) {
                     cprintf("tcp send error\n");
                     goto error;
                 }
-                vc->ack_seq.seq_num += reply_len;
+                vc->ack_seq.seq_num += reply_len + 1; // +1 - because of FIN
+                vc->state = CLOSE_WAIT;
             } else if (tcp_data_len) {
                 tcp_send_ack(vc, 0);
             }
@@ -203,6 +209,28 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
     case TIME_WAIT:
         break;
     case CLOSE_WAIT:
+        if (pkt->hdr.flags & TH_ACK) {
+            if (pkt->hdr.flags & TH_FIN) {
+                if (src_ip != vc->guest_side.ip) {
+                    cprintf("Wrong IP -");
+                    num2ip(src_ip);
+                    cprintf(" is not");
+                    num2ip(vc->guest_side.ip);
+                    cprintf("\n");
+                    goto error;
+                }
+                if (!check_ack_seq(vc, pkt->hdr)) {
+                    cprintf("Wrond ack seq\n");
+                    goto error;
+                }
+                vc->ack_seq.ack_num += 1; // new ACK answer of zero lenght
+                tcp_send_ack(vc, 0);
+                vc->state = LISTEN;
+            }
+        } else {
+            cprintf("ACK flag is not provided\n");
+            goto error;
+        }
         break;
     case LAST_ACK:
         break;
@@ -214,6 +242,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
     return 0;
 
 error:
+    cprintf("Error on state %d", vc->state);
     return -1;
 }
 

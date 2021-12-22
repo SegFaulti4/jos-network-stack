@@ -28,8 +28,8 @@ http_parse(char *data, size_t length, char *reply, size_t *reply_len) {
                 hdr.URI.start = word_start;
                 hdr.URI.length = word_len;
             } else if (!hdr.HTTP_version.start) {
-                if (strncmp(word_start, HTTP_VER, strlen(HTTP_VER))) {
-                    cprintf("Only %s is supported!\n", HTTP_VER);
+                if (strncmp(word_start, HTTP_VER, strlen(HTTP_VER)) && strncmp(word_start, HTTP_VER_COMPATIBLE, strlen(HTTP_VER_COMPATIBLE))) {
+                    cprintf("Only %s and %s are supported!\n", HTTP_VER, HTTP_VER_COMPATIBLE);
                     return http_reply(505, NULL, reply, reply_len);
                 }
                 hdr.HTTP_version.start = word_start;
