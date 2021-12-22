@@ -5,8 +5,16 @@
 #include <inc/stdio.h>
 #include <kern/tcp.h>
 
-
 struct tcp_virtual_channel tcp_vc[TCP_VC_NUM];
+
+void dump_tcp_hdr(struct tcp_hdr *hdr) {
+    /*cprintf("\nTCP header:\n");
+    cprintf("\tdata_offset: %x\n", hdr->data_offset & 0xF);
+    cprintf("\treserved:    %x\n", hdr->reserved & 0x7);
+    cprintf("\tns:          %x\n", hdr->ns & 0x1);
+    cprintf("\tflags:       %x\n", hdr->flags);
+    cprintf("\n");*/
+}
 
 void tcp_init_vc() {
     for (int i = 0; i < TCP_VC_NUM; i++) {
@@ -22,9 +30,9 @@ void tcp_init_vc() {
 int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length) {
     pkt->hdr.seq_num = channel->ack_seq.seq_num;
     pkt->hdr.ack_num = channel->ack_seq.ack_num;
-    pkt->hdr.src_port = channel->host_side.port;
-    pkt->hdr.dst_port = channel->guest_side.port;
-    pkt->hdr.win_size = sizeof(channel->buffer);
+    pkt->hdr.src_port = JHTONS(channel->host_side.port);
+    pkt->hdr.dst_port = JHTONS(channel->guest_side.port);
+    pkt->hdr.win_size = JHTONS(sizeof(channel->buffer));
 
     // TODO chesksum
 
@@ -32,18 +40,21 @@ int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t le
     struct ip_hdr* hdr = &result.hdr;
 
     hdr->ip_protocol = IP_PROTO_TCP;
-    hdr->ip_source_address = channel->host_side.ip;
-    hdr->ip_destination_address = channel->guest_side.ip;
+    hdr->ip_source_address = JHTONL(channel->host_side.ip);
+    hdr->ip_destination_address = JHTONL(channel->guest_side.ip);
 
     size_t data_length = TCP_HEADER_LEN + length;
     memcpy((void*)result.data, (void*)pkt, data_length);
+
+    dump_tcp_hdr(&(pkt->hdr));
 
     return ip_send(&result, data_length);
 }
 
 struct tcp_virtual_channel * match_tcp_vc(struct tcp_pkt *pkt) {
     for (int i = 0; i < TCP_VC_NUM; i++) {
-        if (tcp_vc[i].host_side.port == pkt->hdr.dst_port) {
+        cprintf("%u - %u\n", tcp_vc[i].host_side.port, JNTOHS(pkt->hdr.dst_port));
+        if (tcp_vc[i].host_side.port == JNTOHS(pkt->hdr.dst_port)) {
             return &tcp_vc[i];
         }
     }
@@ -57,7 +68,7 @@ int match_listen_ip(struct tcp_virtual_channel *vc, uint32_t src_ip) {
 
 int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     struct tcp_pkt ack_pkt = {};
-    ack_pkt.hdr.data_offset = (uint8_t)(TCP_HEADER_LEN >> 5);
+    ack_pkt.hdr.DORNS |= ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF) << 4;
     ack_pkt.hdr.flags = flags | TH_ACK;
     int r = tcp_send(vc, &ack_pkt, 0);
 
@@ -82,10 +93,10 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
         if (pkt->hdr.flags & TH_SYN) {
             if (match_listen_ip(vc, src_ip)) {
                 // trivial seq num
-                vc->ack_seq.seq_num = pkt->hdr.seq_num;
+                vc->ack_seq.seq_num = JNTOHL(pkt->hdr.seq_num);
                 vc->guest_side.ip = src_ip;
-                vc->guest_side.port = pkt->hdr.src_port;
-                vc->ack_seq.ack_num = pkt->hdr.seq_num + 1;
+                vc->guest_side.port = JNTOHS(pkt->hdr.src_port);
+                vc->ack_seq.ack_num = JNTOHL(pkt->hdr.seq_num) + 1;
                 tcp_send_ack(vc, TH_SYN);
 
                 vc->state = SYN_RECEIVED;
@@ -114,8 +125,8 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
                 cprintf("\n");
                 goto error;
             }
-            if (pkt->hdr.seq_num != vc->ack_seq.ack_num ||
-                pkt->hdr.ack_num != vc->ack_seq.seq_num + 1) {
+            if (JNTOHL(pkt->hdr.seq_num) != vc->ack_seq.ack_num ||
+                JNTOHL(pkt->hdr.ack_num) != vc->ack_seq.seq_num + 1) {
                 cprintf("Wrond ack seq\n");
                 goto error;
             }
@@ -154,11 +165,11 @@ error:
 }
 
 int tcp_recv(struct ip_pkt* pkt) {
-    if (pkt->hdr.ip_total_length - IP_HEADER_LEN < TCP_HEADER_LEN) {
+    if (JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN < TCP_HEADER_LEN) {
         cprintf("IP packet too short for TCP header\n");
         return -1;
     }
     struct tcp_pkt tcp_pkt;
-    memcpy((void *)&tcp_pkt, (void *)pkt->data, pkt->hdr.ip_total_length - IP_HEADER_LEN);
-    return tcp_process(&tcp_pkt, pkt->hdr.ip_source_address);
+    memcpy((void *)&tcp_pkt, (void *)pkt->data, JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN);
+    return tcp_process(&tcp_pkt, JNTOHL(pkt->hdr.ip_source_address));
 }
