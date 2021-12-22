@@ -43,6 +43,7 @@ KERN_SRCFILES := kern/bootstrap.S \
 			kern/arp.c \
 			kern/icmp.c \
 			kern/udp.c \
+            kern/tcp.c \
 			kern/http.c
 
 

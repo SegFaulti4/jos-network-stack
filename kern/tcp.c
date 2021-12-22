@@ -6,7 +6,7 @@
 #include <kern/tcp.h>
 
 
-struct tcp_virtual_channel[TCP_VC_NUM] tcp_vc;
+struct tcp_virtual_channel tcp_vc[TCP_VC_NUM];
 
 void tcp_init_vc() {
     for (int i = 0; i < TCP_VC_NUM; i++) {
@@ -32,23 +32,13 @@ int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t le
     struct ip_hdr* hdr = &result.hdr;
 
     hdr->ip_protocol = IP_PROTO_TCP;
-    hdr->ip_source_address = channel->my_side.ip;
-    hdr->ip_destination_address = channel->client_side.ip;
+    hdr->ip_source_address = channel->host_side.ip;
+    hdr->ip_destination_address = channel->guest_side.ip;
 
     size_t data_length = TCP_HEADER_LEN + length;
     memcpy((void*)result.data, (void*)pkt, data_length);
 
     return ip_send(&result, data_length);
-}
-
-int tcp_recv(struct ip_pkt* pkt) {
-    if (pkt->hdr.ip_total_length - IP_HEADER_LEN < TCP_HEADER_LEN) {
-        cprintf("IP packet too short for TCP header\n");
-        return -1;
-    }
-    struct tcp_pkt tcp_pkt;
-    memcpy((void *)&tcp_pkt, (void *)pkt->data, pkt->hdr.ip_total_length - IP_HEADER_LEN);
-    tcp_process(&tcp_pkt, pkt->ip_source_address);
 }
 
 struct tcp_virtual_channel * match_tcp_vc(struct tcp_pkt *pkt) {
@@ -67,8 +57,8 @@ int match_listen_ip(struct tcp_virtual_channel *vc, uint32_t src_ip) {
 
 int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     struct tcp_pkt ack_pkt = {};
-    ack_pkt.hdr.data_offset = TCP_HEADER_LEN;
-    ack_pkt.flags = flags | TH_ACK;
+    ack_pkt.hdr.data_offset = (uint8_t)(TCP_HEADER_LEN >> 5);
+    ack_pkt.hdr.flags = flags | TH_ACK;
     int r = tcp_send(vc, &ack_pkt, 0);
 
     if (r == -1) {
@@ -161,4 +151,14 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip) {
 
 error:
     return -1;
+}
+
+int tcp_recv(struct ip_pkt* pkt) {
+    if (pkt->hdr.ip_total_length - IP_HEADER_LEN < TCP_HEADER_LEN) {
+        cprintf("IP packet too short for TCP header\n");
+        return -1;
+    }
+    struct tcp_pkt tcp_pkt;
+    memcpy((void *)&tcp_pkt, (void *)pkt->data, pkt->hdr.ip_total_length - IP_HEADER_LEN);
+    return tcp_process(&tcp_pkt, pkt->hdr.ip_source_address);
 }

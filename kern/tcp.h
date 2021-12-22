@@ -11,7 +11,7 @@ struct tcp_hdr {
     uint32_t ack_num; // auto in tcp_send
     uint8_t data_offset : 4;
     uint8_t reserved : 3;
-    uint8_t ns : 1,
+    uint8_t ns : 1;
     uint8_t flags;
     uint16_t win_size; // auto in tcp_send
     uint16_t checksum; // auto in tcp_send
@@ -72,6 +72,7 @@ struct tcp_virtual_channel {
 
 #define TCP_VC_NUM 64
 
+void tcp_init_vc();
 int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length);
 int tcp_recv(struct ip_pkt* pkt);
 

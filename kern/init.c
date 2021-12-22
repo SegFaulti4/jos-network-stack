@@ -21,6 +21,7 @@
 #include <kern/pci.h>
 #include <kern/e1000.h>
 #include <kern/arp.h>
+#include <kern/tcp.h>
 
 void
 timers_init(void) {
@@ -158,6 +159,7 @@ i386_init(void) {
     env_init();
     pci_init();
     initialize_arp_table();
+    tcp_init_vc();
 
     assert(false);
 

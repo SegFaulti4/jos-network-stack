@@ -6,6 +6,7 @@
 #include <kern/icmp.h>
 #include <inc/stdio.h>
 #include <kern/udp.h>
+#include <kern/tcp.h>
 
 void
 num2ip(int32_t num) {
@@ -71,7 +72,7 @@ ip_recv(struct ip_pkt* pkt) {
         return -E_INV_CHS;
     }
     if (hdr->ip_protocol == IP_PROTO_TCP) {
-        // some tcp reciever
+        return tcp_recv(pkt);
     } else  if (hdr->ip_protocol == IP_PROTO_UDP) {
         return udp_recv(pkt);
     } else if (hdr->ip_protocol == IP_PROTO_ICMP) {
