@@ -88,6 +88,13 @@ int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     return r;
 }
 
+int check_ack_seq(struct tcp_virtual_channel * vc, struct tcp_hdr ack_seq) {
+    cprintf("%u %u - %u %u\n", vc->ack_seq.ack_num, vc->ack_seq.seq_num, ack_seq.ack_num, ack_seq.seq_num);
+
+    return JNTOHL(ack_seq.seq_num) == vc->ack_seq.ack_num &&
+           JNTOHL(ack_seq.ack_num) == vc->ack_seq.seq_num;
+}
+
 int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
     struct tcp_virtual_channel * vc = match_tcp_vc(pkt);
     if (vc == NULL) {
@@ -108,6 +115,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
                 vc->ack_seq.ack_num = JNTOHL(pkt->hdr.seq_num) + 1;
                 tcp_send_ack(vc, TH_SYN);
 
+                vc->ack_seq.seq_num++;
                 vc->state = SYN_RECEIVED;
             } else {
                 cprintf("Source IP");
@@ -134,8 +142,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
                 cprintf("\n");
                 goto error;
             }
-            if (JNTOHL(pkt->hdr.seq_num) != vc->ack_seq.ack_num ||
-                JNTOHL(pkt->hdr.ack_num) != vc->ack_seq.seq_num + 1) {
+            if (!check_ack_seq(vc, pkt->hdr)) {
                 cprintf("Wrond ack seq\n");
                 goto error;
             }
@@ -146,7 +153,6 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         }
         break;
     case ESTABLISHED:
-        // TODO Established
         if (pkt->hdr.flags & TH_ACK) {
             if (src_ip != vc->guest_side.ip) {
                 cprintf("Wrong IP -");
@@ -156,8 +162,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
                 cprintf("\n");
                 goto error;
             }
-            if (JNTOHL(pkt->hdr.seq_num) != vc->ack_seq.ack_num ||
-                JNTOHL(pkt->hdr.ack_num) != vc->ack_seq.seq_num) {
+            if (!check_ack_seq(vc, pkt->hdr)) {
                 cprintf("Wrond ack seq\n");
                 goto error;
             }
@@ -168,7 +173,6 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
             memcpy((void *)vc->buffer + vc->data_len, (void *)pkt->data, tcp_data_len);
             vc->data_len += tcp_data_len;
             vc->ack_seq.ack_num += tcp_data_len;
-            tcp_send_ack(vc, 0);
 
             if (pkt->hdr.flags & TH_PSH) {
                 char reply[1024] = {};
@@ -183,6 +187,8 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
                     goto error;
                 }
                 vc->ack_seq.seq_num += reply_len;
+            } else if (tcp_data_len) {
+                tcp_send_ack(vc, 0);
             }
         } else {
             cprintf("ACK flag is not provided\n");
