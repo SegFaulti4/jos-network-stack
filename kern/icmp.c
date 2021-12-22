@@ -6,30 +6,6 @@
 #include <kern/icmp.h>
 #include <inc/stdio.h>
 
-int16_t get_checksum(int8_t data[], int32_t length)
-{
-  int i = 0;
-  int32_t temp = 0;
-  int16_t checksum = 0;
-
-  while (i < length)
-  {
-    if ((i+1) < length)
-    {
-      temp = (int32_t)checksum + ((((int32_t)data[i])<<8) + data[i+1]);
-      checksum = (temp & 0xffff) + (temp >> 16);
-      i = i + 2;
-    }
-    else
-    {
-      temp = checksum  + (data[i] << 8);
-      checksum = (temp & 0xffff) + (temp >> 16);
-      i = i + 1;
-    }
-  }
-  checksum = ~checksum;
-  return checksum;
-}
 
 int
 icmp_echo_reply(struct ip_pkt* pkt) {
