@@ -9,7 +9,9 @@ struct tcp_hdr {
     uint16_t dst_port; // auto in tcp_send
     uint32_t seq_num; // auto in tcp_send
     uint32_t ack_num; // auto in tcp_send
-    uint8_t DORNS;
+    uint8_t ns : 1,
+            reserved : 3,
+            data_offset : 4; // <data_offset><reserved><ns> field
     uint8_t flags;
     uint16_t win_size; // auto in tcp_send
     uint16_t checksum; // auto in tcp_send

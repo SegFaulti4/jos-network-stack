@@ -28,8 +28,8 @@ void tcp_init_vc() {
 }
 
 int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length) {
-    pkt->hdr.seq_num = channel->ack_seq.seq_num;
-    pkt->hdr.ack_num = channel->ack_seq.ack_num;
+    pkt->hdr.seq_num = JHTONL(channel->ack_seq.seq_num);
+    pkt->hdr.ack_num = JHTONL(channel->ack_seq.ack_num);
     pkt->hdr.src_port = JHTONS(channel->host_side.port);
     pkt->hdr.dst_port = JHTONS(channel->guest_side.port);
     pkt->hdr.win_size = JHTONS(sizeof(channel->buffer));
@@ -68,7 +68,7 @@ int match_listen_ip(struct tcp_virtual_channel *vc, uint32_t src_ip) {
 
 int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     struct tcp_pkt ack_pkt = {};
-    ack_pkt.hdr.DORNS |= ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF) << 4;
+    ack_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
     ack_pkt.hdr.flags = flags | TH_ACK;
     int r = tcp_send(vc, &ack_pkt, 0);
 
