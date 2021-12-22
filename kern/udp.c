@@ -28,7 +28,7 @@ udp_recv(struct ip_pkt* pkt) {
     memcpy((void*)&upkt, (void*)pkt->data, size);
     struct udp_hdr* hdr = &upkt.hdr;
     cprintf("port: %d\n", JNTOHS(hdr->destination_port));
-    for (size_t i = 0; i < JNTOHS(hdr->length); i++) {
+    for (size_t i = 0; i < JNTOHS(hdr->length) - UDP_HEADER_LEN; i++) {
         cprintf("%c", upkt.data[i]);
     }
     cprintf("\n");
