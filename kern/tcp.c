@@ -193,6 +193,7 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
                     goto error;
                 }
                 vc->ack_seq.seq_num += reply_len + 1; // +1 - because of FIN
+                vc->data_len = 0; // because of PSH
                 vc->state = CLOSE_WAIT;
             } else if (tcp_data_len) {
                 tcp_send_ack(vc, 0);
@@ -249,7 +250,7 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
     return 0;
 
 error:
-    cprintf("Error on state %d", vc->state);
+    cprintf("Error on state %d\n", vc->state);
     return -1;
 }
 
