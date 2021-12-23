@@ -5,22 +5,15 @@
 #include <inc/stdio.h>
 #include <kern/tcp.h>
 #include <kern/http.h>
+#include <kern/traceopt.h>
 
 struct tcp_virtual_channel tcp_vc[TCP_VC_NUM];
 
-void dump_tcp_hdr(struct tcp_hdr *hdr) {
-    /*cprintf("\nTCP header:\n");
-    cprintf("\tdata_offset: %x\n", hdr->data_offset & 0xF);
-    cprintf("\treserved:    %x\n", hdr->reserved & 0x7);
-    cprintf("\tns:          %x\n", hdr->ns & 0x1);
-    cprintf("\tflags:       %x\n", hdr->flags);
-    cprintf("\n");*/
-}
-
-void tcp_init_vc() {
+void
+tcp_init_vc() {
     tcp_vc[0].state = LISTEN;
     tcp_vc[0].host_side.ip = MY_IP;
-    tcp_vc[0].host_side.port = 80;
+    tcp_vc[0].host_side.port = 80; // for browsers
     // tcp connection from host OS is expected
     tcp_vc[0].guest_side.ip = HOST_IP;
     tcp_vc[0].guest_side.port = 8080;
@@ -34,7 +27,10 @@ void tcp_init_vc() {
     }
 }
 
-int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length) {
+int
+tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t length) {
+    if (trace_packet_processing) cprintf("Sending TCP packet\n");
+
     pkt->hdr.seq_num = JHTONL(channel->ack_seq.seq_num);
     pkt->hdr.ack_num = JHTONL(channel->ack_seq.ack_num);
     pkt->hdr.src_port = JHTONS(channel->host_side.port);
@@ -61,12 +57,11 @@ int tcp_send(struct tcp_virtual_channel* channel, struct tcp_pkt* pkt, size_t le
     pkt->hdr.checksum = JHTONS(JNTOHS(ip_checksum(buf, data_length + 12)) - channel->host_side.port);
     memcpy((void*)result.data, (void*)pkt, data_length);
 
-    dump_tcp_hdr(&(pkt->hdr));
-
     return ip_send(&result, data_length);
 }
 
-struct tcp_virtual_channel * match_tcp_vc(struct tcp_pkt *pkt) {
+struct tcp_virtual_channel *
+match_tcp_vc(struct tcp_pkt *pkt) {
     for (int i = 0; i < TCP_VC_NUM; i++) {
         if (tcp_vc[i].host_side.port == JNTOHS(pkt->hdr.dst_port)) {
             return &tcp_vc[i];
@@ -75,12 +70,14 @@ struct tcp_virtual_channel * match_tcp_vc(struct tcp_pkt *pkt) {
     return NULL;
 }
 
-int match_listen_ip(struct tcp_virtual_channel *vc, uint32_t src_ip) {
+int
+match_listen_ip(struct tcp_virtual_channel *vc, uint32_t src_ip) {
     // always match
     return 1;
 }
 
-int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
+int
+tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     struct tcp_pkt ack_pkt = {};
     ack_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
     ack_pkt.hdr.flags = flags | TH_ACK;
@@ -93,14 +90,17 @@ int tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     return r;
 }
 
-int check_ack_seq(struct tcp_virtual_channel * vc, struct tcp_hdr ack_seq) {
-    cprintf("%u %u - %u %u\n", vc->ack_seq.ack_num, vc->ack_seq.seq_num, (uint32_t)JNTOHL(ack_seq.ack_num), (uint32_t)JNTOHL(ack_seq.seq_num));
+int
+check_ack_seq(struct tcp_virtual_channel * vc, struct tcp_hdr ack_seq) {
+    //cprintf("Ack=%u Seq=%u <== Ack=%u Seq=%u\n", vc->ack_seq.ack_num, vc->ack_seq.seq_num, (uint32_t)JNTOHL(ack_seq.ack_num), (uint32_t)JNTOHL(ack_seq.seq_num));
 
     return JNTOHL(ack_seq.seq_num) == vc->ack_seq.ack_num &&
            JNTOHL(ack_seq.ack_num) == vc->ack_seq.seq_num;
 }
 
-int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
+int
+tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
+    if (trace_packet_processing) cprintf("Processing TCP packet\n");
     struct tcp_virtual_channel * vc = match_tcp_vc(pkt);
     if (vc == NULL) {
         cprintf("No TCP VC match for packet\n");
@@ -109,6 +109,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
     switch(vc->state) {
     case CLOSED:
         // not implemented
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case LISTEN:
         if (pkt->hdr.flags & TH_SYN) {
@@ -136,6 +137,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         }
         break;
     case SYN_SENT:
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case SYN_RECEIVED:
         if (pkt->hdr.flags & TH_ACK) {
@@ -201,12 +203,16 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         }
         break;
     case FIN_WAIT_1:
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case CLOSING:
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case FIN_WAIT_2:
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case TIME_WAIT:
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case CLOSE_WAIT:
         if (pkt->hdr.flags & TH_ACK) {
@@ -233,6 +239,7 @@ int tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         }
         break;
     case LAST_ACK:
+        cprintf("Unimplemented state - %d\n", vc->state);
         break;
     default:
         cprintf("Impossible state - %d\n", vc->state);
@@ -246,7 +253,8 @@ error:
     return -1;
 }
 
-int tcp_recv(struct ip_pkt* pkt) {
+int
+tcp_recv(struct ip_pkt* pkt) {
     if (JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN < TCP_HEADER_LEN) {
         cprintf("IP packet too short for TCP header\n");
         return -1;

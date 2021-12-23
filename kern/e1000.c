@@ -5,6 +5,7 @@
 #include <inc/types.h>
 #include <inc/string.h>
 #include <inc/error.h>
+#include <kern/traceopt.h>
 
 // Base mmio address
 volatile uint32_t *phy_mmio_addr;
@@ -15,7 +16,8 @@ struct rx_desc rx_desc_table[E1000_NU_DESC] __attribute__((aligned (PAGE_SIZE)))
 char tx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
 char rx_buf[E1000_NU_DESC][E1000_BUFFER_SIZE] __attribute__((aligned (PAGE_SIZE)));
 
-void dump_tx_desc(uint32_t tx_idx) {
+void
+dump_tx_desc(uint32_t tx_idx) {
     cprintf("\nTX Desc %u:\n", tx_idx);
     cprintf("\tbuf_addr: %lu\n", tx_desc_table[tx_idx].buf_addr);
     cprintf("\tlength:   %u\n", tx_desc_table[tx_idx].length);
@@ -27,7 +29,8 @@ void dump_tx_desc(uint32_t tx_idx) {
     cprintf("\n");
 }
 
-void dump_rx_desc(uint32_t rx_idx) {
+void
+dump_rx_desc(uint32_t rx_idx) {
     cprintf("\nRX Desc %u:\n", rx_idx);
     cprintf("\tbuf_addr: %lu\n", rx_desc_table[rx_idx].buf_addr);
     cprintf("\tlength:   %u\n", rx_desc_table[rx_idx].length);
@@ -38,7 +41,8 @@ void dump_rx_desc(uint32_t rx_idx) {
     cprintf("\n");
 }
 
-void e1000_transmit_init() {
+void
+e1000_transmit_init() {
     // Set TX Base Address Low
     E1000_REG(E1000_TDBAL) = (uint32_t)PADDR(tx_desc_table);
 
@@ -73,10 +77,11 @@ void e1000_transmit_init() {
         tx_desc_table[i].cmd = E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP;
     }
 
-    dump_tx_desc(0);
+    if (trace_packets) dump_tx_desc(0);
 }
 
-void e1000_receive_init() {
+void
+e1000_receive_init() {
     // Set RX Base Address Low
     E1000_REG(E1000_RDBAL) = PADDR(rx_desc_table);
 
@@ -103,10 +108,11 @@ void e1000_receive_init() {
         rx_desc_table[i].buf_addr = PADDR(rx_buf[i]);
     }
 
-    dump_rx_desc(0);
+    if (trace_packets) dump_rx_desc(0);
 }
 
-int e1000_attach(struct pci_func * pciFunction) {
+int
+e1000_attach(struct pci_func * pciFunction) {
     // Get phy_mmio address and size
     pci_get_bar_info(pciFunction);
 
@@ -135,7 +141,8 @@ int e1000_attach(struct pci_func * pciFunction) {
     return 1;
 }
 
-int e1000_transmit(const char* buf, uint16_t len) {
+int
+e1000_transmit(const char* buf, uint16_t len) {
     // Trunk packet length
     len = len > E1000_BUFFER_SIZE ? E1000_BUFFER_SIZE : len;
 
@@ -144,7 +151,7 @@ int e1000_transmit(const char* buf, uint16_t len) {
 
     // Check status of tail TX Descriptor
     if (!(tx_desc_table[tail_tx].status & E1000_TXD_STAT_DD)) {
-        cprintf("E1000 transmit queue is full\n");
+        cprintf("\nE1000 transmit queue is full\n");
         return -1;
     }
 
@@ -157,7 +164,7 @@ int e1000_transmit(const char* buf, uint16_t len) {
     // Clear TX status Descriptor Done
     tx_desc_table[tail_tx].status &= ~E1000_TXD_STAT_DD;
 
-    dump_tx_desc(tail_tx);
+    if (trace_packets) dump_tx_desc(tail_tx);
 
     // Point to next TX Descriptor
     E1000_REG(E1000_TDT) = (tail_tx + 1) % E1000_NU_DESC;
@@ -165,7 +172,8 @@ int e1000_transmit(const char* buf, uint16_t len) {
     return 0;
 }
 
-int e1000_listen(void) {
+int
+e1000_listen(void) {
     while (1) {
         uint32_t tail_rx = E1000_REG(E1000_RDT);
         tail_rx = (tail_rx + 1) % E1000_NU_DESC;
@@ -178,7 +186,8 @@ int e1000_listen(void) {
     return 0;
 }
 
-int e1000_timeout_listen(double timeout) {
+int
+e1000_timeout_listen(double timeout) {
     static uint64_t cpu_freq = 0;
     if (!cpu_freq) {
         cpu_freq = hpet_cpu_frequency();
@@ -200,12 +209,13 @@ int e1000_timeout_listen(double timeout) {
     return -1;
 }
 
-int e1000_receive(char* buffer) {
+int
+e1000_receive(char* buffer) {
     // Tail RX Descriptor Index
     uint32_t tail_rx = E1000_REG(E1000_RDT);
     tail_rx = (tail_rx + 1) % E1000_NU_DESC;
 
-    dump_rx_desc(tail_rx);
+    if (trace_packets) dump_rx_desc(tail_rx);
 
     // Check status of tail RX Descriptor
     if (!(rx_desc_table[tail_rx].status & E1000_RXD_STAT_DD)) {
@@ -213,7 +223,7 @@ int e1000_receive(char* buffer) {
         return 0;
     }
     if (!(rx_desc_table[tail_rx].status & E1000_RXD_STAT_EOP)){
-        cprintf("E1000 receive status is not EOP\n");
+        cprintf("\nE1000 receive status is not EOP\n");
         return 0;
     }
 

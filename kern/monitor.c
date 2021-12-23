@@ -21,6 +21,7 @@
 #include <kern/e1000.h>
 #include <kern/udp.h>
 #include <kern/http.h>
+#include <kern/traceopt.h>
 
 #define WHITESPACE "\t\r\n "
 #define MAXARGS    16
@@ -208,10 +209,17 @@ mon_eth_recv(int argc, char **argv, struct Trapframe *tf) {
         char buf[1000];
         e1000_listen();
         int len = eth_recv(buf);
-        cprintf("received len: %d\n", len);
-        cprintf("received packet: ");
-        for (int i = 0; i < len; i++) {
-            cprintf("%x ", buf[i] & 0xff);
+        if (trace_packets && len >= 0) {
+            cprintf("received len: %d\n", len);
+            if (len > 0) {
+                cprintf("received packet: ");
+                for (int i = 0; i < len; i++) {
+                    cprintf("%x ", buf[i] & 0xff);
+                }
+                cprintf("\n");
+            }
+        } else {
+            cprintf("received status: %s%s\n", (len >= 0) ? "OK" : "ERROR", (len == 0) ? " EMPTY" : " ");
         }
         cprintf("\n");
     }

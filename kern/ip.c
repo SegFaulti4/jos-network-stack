@@ -7,6 +7,7 @@
 #include <inc/stdio.h>
 #include <kern/udp.h>
 #include <kern/tcp.h>
+#include <kern/traceopt.h>
 
 void
 num2ip(int32_t num) {
@@ -41,6 +42,7 @@ ip_checksum(void* vdata, size_t length) {
 
 int
 ip_send(struct ip_pkt* pkt, uint16_t length) {
+    if (trace_packet_processing) cprintf("Sending IP packet\n");
     static uint16_t packet_id = 0;
 
     struct ip_hdr* hdr = &pkt->hdr;
@@ -61,7 +63,7 @@ ip_send(struct ip_pkt* pkt, uint16_t length) {
 
 int
 ip_recv(struct ip_pkt* pkt) {
-    cprintf("Processing IP\n");
+    if (trace_packet_processing) cprintf("Processing IP packet\n");
     struct ip_hdr* hdr = &pkt->hdr;
     if (hdr->ip_verlen != IP_VER_LEN) {
         return -E_UNS_VER;

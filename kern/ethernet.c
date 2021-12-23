@@ -6,6 +6,7 @@
 #include <inc/assert.h>
 #include <kern/arp.h>
 #include <kern/ip.h>
+#include <kern/traceopt.h>
 
 //52:54:00:12:34:56
 static const uint8_t qemu_mac[6] = {0x52, 0x54, 0x0, 0x12, 0x34, 0x56};
@@ -17,6 +18,7 @@ get_my_mac(void) {
 
 int
 eth_send(struct eth_hdr* hdr, void* data, size_t len) {
+    if (trace_packet_processing) cprintf("Sending Ethernet packet\n");
     assert(len <= ETH_MAX_PACKET_SIZE - sizeof(struct eth_hdr));
     memcpy((void*)hdr->eth_source_mac, get_my_mac(), sizeof(hdr->eth_source_mac));
     if (hdr->eth_type == JHTONS(ETH_TYPE_IP)) {
@@ -42,14 +44,15 @@ eth_recv(void* data) {
 
     int size = e1000_receive(buf);
     if (size <= 0) return size;
+    if (trace_packet_processing) cprintf("Processing Ethernet packet\n");
 
     memcpy((void*)&hdr, (void*)buf, sizeof(struct eth_hdr));
     hdr.eth_type = JNTOHS(hdr.eth_type);
     memcpy(data, (void*)buf + sizeof(struct eth_hdr), size);
     if (hdr.eth_type == ETH_TYPE_IP) {
-        return ip_recv(data);
+        if (ip_recv(data) < 0) return -1;
     } else if (hdr.eth_type == ETH_TYPE_ARP) {
-        arp_resolve(data);
+        if (arp_resolve(data) < 0) return -1;
     } else {
         return -E_BAD_ETH_TYPE;
     }

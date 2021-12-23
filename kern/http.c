@@ -2,13 +2,14 @@
 #include <inc/string.h>
 #include <kern/tcp.h>
 #include <kern/http.h>
+#include <kern/traceopt.h>
 
 static const char *OK_page = "<!DOCTYPE html>\n<html><body><h1>Hello from JOS!</h1></body></html>";
-// static const char *Err_page = "<html><body><h1>Ooops! Somebodies marks are decreasing...</h1></body></html>";
 
 int
 http_parse(char *data, size_t length, char *reply, size_t *reply_len) {
-    cprintf("Processing HTTP\n");
+    if (trace_packet_processing) cprintf("Parsing HTTP request\n");
+
     struct HTTP_hdr hdr = {};
     char *word_start = data;
     size_t word_len = 0;
@@ -47,6 +48,8 @@ http_parse(char *data, size_t length, char *reply, size_t *reply_len) {
 
 int
 http_reply(int code, const char *page, char *reply, size_t *reply_len) {
+    if (trace_packet_processing) cprintf("Creating HTTP reply\n");
+
     static const char *messages[600] = {};
     if (!messages[200]) { // first init
         messages[200] = "200 OK";

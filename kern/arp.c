@@ -4,6 +4,7 @@
 #include <kern/ethernet.h>
 #include <inc/error.h>
 #include <kern/inet.h>
+#include <kern/traceopt.h>
 
 static struct arp_cache_table arp_table[ARP_TABLE_MAX_SIZE];
 
@@ -60,9 +61,9 @@ update_arp_table(struct arp_hdr *arp_header) {
     return 0;
 }
 
-void
+int
 arp_reply(struct arp_hdr *arp_header) {
-    cprintf("In arp_reply\n");
+    if (trace_packet_processing) cprintf("Sending ARP reply\n");
     arp_header->opcode = ARP_REPLY;
     memcpy(arp_header->target_mac, arp_header->source_mac, 6);
     arp_header->target_ip = arp_header->source_ip;
@@ -80,12 +81,14 @@ arp_reply(struct arp_hdr *arp_header) {
     int status = eth_send(&reply_header, arp_header, sizeof(struct arp_hdr));
     if (status < 0) {
         cprintf("Error attempting arp response.");
+        return -1;
     }
+    return 0;
 }
 
-void
+int
 arp_resolve(void* data) {
-    cprintf("In arp_resolve\n");
+    if (trace_packet_processing) cprintf("Resolving ARP\n");
     struct arp_hdr *arp_header;
 
     arp_header = (struct arp_hdr *)data;
@@ -97,11 +100,11 @@ arp_resolve(void* data) {
 
     if (arp_header->hardware_type != ARP_ETHERNET) {
         cprintf("Error! Only ethernet is supporting.");
-        return;
+        return -1;
     }
     if (arp_header->protocol_type != ARP_IPV4) {
         cprintf("Error! Only IPv4 is supported.");
-        return;
+        return -1;
     }
 
     int status = update_arp_table(arp_header);
@@ -110,12 +113,12 @@ arp_resolve(void* data) {
     }
     if (arp_header->target_ip != MY_IP) {
         cprintf("This is not for me!");
-        return;
+        return -1;
     }
     if (arp_header->opcode != ARP_REQUEST) {
         cprintf("Error! Only arp requests are supported");
-        return;
+        return -1;
     }
 
-    arp_reply(arp_header);
+    return arp_reply(arp_header);
 }

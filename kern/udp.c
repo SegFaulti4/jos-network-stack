@@ -2,9 +2,11 @@
 #include <kern/inet.h>
 #include <inc/string.h>
 #include <inc/stdio.h>
+#include <kern/traceopt.h>
 
 int
 udp_send(void* data, int length) {
+    if (trace_packet_processing) cprintf("Sending UDP packet\n");
     struct udp_pkt pkt;
     struct udp_hdr* hdr = &pkt.hdr;
     hdr->source_port = JHTONS(8081);
@@ -22,7 +24,7 @@ udp_send(void* data, int length) {
 
 int
 udp_recv(struct ip_pkt* pkt) {
-    cprintf("Processing UDP\n");
+    if (trace_packet_processing) cprintf("Processing UDP packet\n");
     struct udp_pkt upkt;
     int size = JNTOHS(pkt->hdr.ip_total_length) - IP_HEADER_LEN;
     memcpy((void*)&upkt, (void*)pkt->data, size);
