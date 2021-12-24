@@ -34,5 +34,6 @@ udp_recv(struct ip_pkt* pkt) {
         cprintf("%c", upkt.data[i]);
     }
     cprintf("\n");
+    udp_send(upkt.data, JNTOHS(hdr->length) - UDP_HEADER_LEN);
     return 0;
 }
