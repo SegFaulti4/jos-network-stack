@@ -298,6 +298,10 @@ monitor(struct Trapframe *tf) {
 
    if (tf) print_trapframe(tf);
 
+   #ifdef NETWORK_ENABLE
+	mon_eth_recv(0, NULL, NULL);
+   #endif
+
    char *buf;
    do buf = readline("K> ");
    while (!buf || runcmd(buf, tf) >= 0);

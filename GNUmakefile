@@ -243,6 +243,12 @@ CFLAGS += -DGRADE3_PFX2=$(GRADE3_PFX2)
 .SILENT:
 endif
 
+# net purposes
+ifdef NETWORK_ENABLE
+CFLAGS += -DNETWORK_ENABLE
+endif
+# net purposes
+
 # Common linker flags
 LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 --print-gc-sections --warn-common
 
