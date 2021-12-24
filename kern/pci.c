@@ -68,7 +68,7 @@ pci_conf_write(struct pci_func *f, uint32_t off, uint32_t v) {
 }
 
 
-static int __attribute__((warn_unused_result))
+static int
 pci_attach_match(uint32_t key1, uint32_t key2,
                  struct pci_driver *list, struct pci_func *pcif) {
     uint32_t i;
