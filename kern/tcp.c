@@ -80,7 +80,7 @@ int
 tcp_send_ack(struct tcp_virtual_channel *vc, uint8_t flags) {
     struct tcp_pkt ack_pkt = {};
     ack_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
-    ack_pkt.hdr.flags = flags | TH_ACK;
+    ack_pkt.hdr.flags = (uint32_t)flags | TH_ACK;
     int r = tcp_send(vc, &ack_pkt, 0);
 
     if (r == -1) {
@@ -112,7 +112,7 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case LISTEN:
-        if (pkt->hdr.flags & TH_SYN) {
+        if ((uint32_t)pkt->hdr.flags & TH_SYN) {
             if (match_listen_ip(vc, src_ip)) {
                 // trivial seq num
                 vc->ack_seq.seq_num = JNTOHL(pkt->hdr.seq_num);
@@ -140,7 +140,7 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case SYN_RECEIVED:
-        if (pkt->hdr.flags & TH_ACK) {
+        if ((uint32_t)pkt->hdr.flags & TH_ACK) {
             if (src_ip != vc->guest_side.ip) {
                 cprintf("Wrong IP -");
                 num2ip(src_ip);
@@ -160,7 +160,7 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         }
         break;
     case ESTABLISHED:
-        if (pkt->hdr.flags & TH_ACK) {
+        if ((uint32_t)pkt->hdr.flags & TH_ACK) {
             if (src_ip != vc->guest_side.ip) {
                 cprintf("Wrong IP -");
                 num2ip(src_ip);
@@ -181,7 +181,7 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
             vc->data_len += tcp_data_len;
             vc->ack_seq.ack_num += tcp_data_len;
 
-            if (pkt->hdr.flags & TH_PSH) {
+            if ((uint32_t)pkt->hdr.flags & TH_PSH) {
                 size_t reply_len = 0;
                 struct tcp_pkt data_pkt = {};
                 data_pkt.hdr.data_offset = ((uint8_t)(TCP_HEADER_LEN >> 2) & 0xF);
@@ -216,8 +216,8 @@ tcp_process(struct tcp_pkt *pkt, uint32_t src_ip, uint16_t tcp_data_len) {
         cprintf("Unimplemented state - %d\n", vc->state);
         break;
     case CLOSE_WAIT:
-        if (pkt->hdr.flags & TH_ACK) {
-            if (pkt->hdr.flags & TH_FIN) {
+        if ((uint32_t)pkt->hdr.flags & TH_ACK) {
+            if ((uint32_t)pkt->hdr.flags & TH_FIN) {
                 if (src_ip != vc->guest_side.ip) {
                     cprintf("Wrong IP -");
                     num2ip(src_ip);
